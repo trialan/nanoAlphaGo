@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class GoBoard:
     def __init__(self, size=19):
         self.size = size
@@ -66,5 +67,36 @@ class GoBoard:
         n_unique_liberties = len(liberties_set)
         return n_unique_liberties
 
+    def apply_move(self, move, color):
+        if move == 'pass':
+            return
+
+        x, y = move
+        self.board[x, y] = color
+        opponent = -color
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
+                continue
+            if self.board[nx, ny] == opponent:
+                if self.count_liberties((nx, ny)) == 0:
+                    self._remove_group((nx, ny))
 
 
+def _remove_group(self, position):
+    stack = [position]
+    color = self.board[position]
+
+    while stack:
+        x, y = stack.pop()
+
+        if self.board[x, y] == color:
+            self.board[x, y] = 0  # Remove the stone
+
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nx, ny = x + dx, y + dy
+
+                if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
+                    continue
+
+                stack.append((nx, ny))
