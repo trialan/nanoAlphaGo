@@ -20,7 +20,7 @@ def test_getting_legal_moves():
     board = GoBoard(size=9)
     assert_first_move_options_are_correct(board)
     board = _setup_a_simple_board()
-    moves_for_white = board.possible_moves(-1)
+    moves_for_white = board.legal_moves(-1)
     assert len(moves_for_white) == 9*9 + 1 - 3
 
 def test_we_dont_allow_illegal_moves():
@@ -61,8 +61,8 @@ def assert_board_is_initially_empty(board):
 
 
 def assert_first_move_options_are_correct(board):
-    moves_for_black = board.possible_moves(1)
-    moves_for_white = board.possible_moves(-1)
+    moves_for_black = board.legal_moves(1)
+    moves_for_white = board.legal_moves(-1)
 
     #First move is any intersection or pass
     assert len(moves_for_black) == 9*9 + 1

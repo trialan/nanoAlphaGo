@@ -6,7 +6,7 @@ class GoBoard:
         self.board = np.zeros((size, size), dtype=int)  # 0=empty, 1=black, -1=white
         self.previous_board = None  # To check for Ko rule
 
-    def possible_moves(self, color):
+    def legal_moves(self, color):
         moves = []
         for x in range(self.size):
             for y in range(self.size):
@@ -65,4 +65,6 @@ class GoBoard:
 
         n_unique_liberties = len(liberties_set)
         return n_unique_liberties
+
+
 
