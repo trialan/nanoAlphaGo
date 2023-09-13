@@ -8,22 +8,25 @@ def test_board_initialisation():
     assert_board_is_initially_empty(board.board)
 
 
-def test_getting_legal_moves():
-    board = GoBoard(size=9)
-
-    assert_first_move_options_are_correct(board)
-
-    board = _setup_a_simple_board()
-    moves_for_white = board.possible_moves(-1)
-    assert len(moves_for_white) == 9*9 + 1 - 3
-
-    _check_the_no_suicide_rule()
-
-
 def test_counting_the_number_of_liberties():
     board = _setup_a_complicated_board()
     assert board.count_liberties((5,3)) == 4
     assert board.count_liberties((1,0)) == 1
+    assert board.count_liberties((6,4)) == 4
+    assert board.count_liberties((4,6)) == 4 #Test group rule
+
+
+def test_getting_legal_moves():
+    board = GoBoard(size=9)
+    assert_first_move_options_are_correct(board)
+    board = _setup_a_simple_board()
+    moves_for_white = board.possible_moves(-1)
+    assert len(moves_for_white) == 9*9 + 1 - 3
+
+def test_we_dont_allow_illegal_moves():
+    _check_the_no_suicide_rule()
+    _check_that_intersections_must_be_empty()
+    _check_that_position_must_be_on_board()
 
 
 def _check_the_no_suicide_rule():
@@ -31,6 +34,25 @@ def _check_the_no_suicide_rule():
     suicide_move = (1,1)
     color = 1
     assert not board.is_valid_move(suicide_move, color)
+
+
+def _check_that_position_must_be_on_board():
+    board = GoBoard(size=9)
+    bad_moves = [(11,3), (-1, 3)]
+    assert_these_are_all_bad_moves(board, bad_moves)
+
+
+def _check_that_intersections_must_be_empty():
+    board = _setup_a_simple_board()
+    bad_moves = [(0,0), (4,6), (7,1)]
+    assert_these_are_all_bad_moves(board, bad_moves)
+
+
+def assert_these_are_all_bad_moves(board, bad_moves):
+    for bad_move in bad_moves:
+        assert not board.is_valid_move(bad_move, 1)
+        assert not board.is_valid_move(bad_move, -1)
+
 
 
 def assert_board_is_initially_empty(board):

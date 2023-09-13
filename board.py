@@ -10,36 +10,37 @@ class GoBoard:
         moves = []
         for x in range(self.size):
             for y in range(self.size):
-                if self.board[x, y] == 0:  # Empty intersection
-                    if self.is_valid_move((x, y), color):  # Check if the move is valid
+                if self.board[x, y] == 0:
+                    if self.is_valid_move((x, y), color):
                         moves.append((x, y))
-        moves.append('pass')  # You can always pass
+        moves.append('pass')
         return moves
 
     def is_valid_move(self, position, color):
         x, y = position
-        # Check for out-of-bounds
+        valid = True
+
+        # Out-of-bounds check
         if x < 0 or y < 0 or x >= self.size or y >= self.size:
-            return False
+            valid = False
 
-        # Check if the intersection is empty
-        if self.board[x, y] != 0:
-            return False
+        # Intersection check
+        elif self.board[x, y] != 0:
+            valid = False
 
-        # Temporary place the stone to check for suicide rule
-        self.board[x, y] = color
-        if self.count_liberties(position) == 0:  # No suicide rule
-            self.board[x, y] = 0  # Remove the temporarily placed stone
-            return False
+        else:
+            # Temporary place the stone to check for suicide rule
+            self.board[x, y] = color
+            if self.count_liberties(position) == 0:
+                valid = False
+            self.board[x, y] = 0  # Reset the position to its original state
 
         # TODO: Check for Ko rule
-
-        self.board[x, y] = 0  # Remove the temporarily placed stone
-        return True
+        return valid
 
     def count_liberties(self, position):
         stack = [position]
-        liberties = 0
+        liberties_set = set()
         visited = set()
 
         color = self.board[position]
@@ -57,9 +58,11 @@ class GoBoard:
                     continue
 
                 if self.board[nx, ny] == 0:
-                    liberties += 1
+                    liberties_set.add((nx, ny))
 
                 elif self.board[nx, ny] == color and (nx, ny) not in visited:
                     stack.append((nx, ny))
 
-        return liberties
+        n_unique_liberties = len(liberties_set)
+        return n_unique_liberties
+
