@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
 from nanoAlphaGo.board import GoBoard
 
@@ -17,25 +16,27 @@ class PolicyNN(nn.Module):
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(128 * board_size * board_size, 256)
-        self.fc2 = nn.Linear(256, board_size * board_size + 1)
+        self.fc_policy = nn.Linear(256, board_size * board_size + 1)  # Policy head
 
-    def generate_move(self, board):
-        output = self._forward_pass(board)
-        mask = _legal_move_mask(board, self.color)
-        output = output * mask
-        _, predicted = torch.max(output, 1)
-        move_as_int = predicted.item()
-        move_as_coordinates = _index_to_move(move_as_int, board.size)
-        return move_as_coordinates
-
-    def _forward_pass(self, board):
+    def forward(self, board):
         x = _format_board_for_nn(board)
         x = nn.functional.relu(self.conv1(x))
         x = nn.functional.relu(self.conv2(x))
         x = x.view(x.size(0), -1)
         x = nn.functional.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
+
+        policy_output = self.fc_policy(x)
+        return policy_output
+
+    def generate_move(self, board):
+        policy_output = self.forward(board)
+        mask = _legal_move_mask(board, self.color)
+        policy_output = policy_output * mask
+        _, predicted = torch.max(policy_output, 1)
+        move_as_int = predicted.item()
+        move_as_coordinates = _index_to_move(move_as_int, board.size)
+
+        return move_as_coordinates
 
 
 def _legal_move_mask(board, color):

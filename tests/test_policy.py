@@ -1,7 +1,7 @@
 import numpy as np
 
 from nanoAlphaGo.board import GoBoard
-from nanoAlphaGo.policy import _index_to_move, PolicyNN, _legal_move_mask
+from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, _legal_move_mask
 
 
 def test_that_model_is_outputting_moves_as_coordinates():
