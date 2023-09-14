@@ -3,20 +3,21 @@ import torch
 import torch.nn as nn
 
 from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.config import BOARD_SIZE
+
 
 
 class PolicyNN(nn.Module):
-    def __init__(self, board, color):
+    def __init__(self, color):
         super(PolicyNN, self).__init__()
-        board_size = board.size
 
         self.color = color
         assert color in [1, -1]
 
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.fc1 = nn.Linear(128 * board_size * board_size, 256)
-        self.fc_policy = nn.Linear(256, board_size * board_size + 1)  # Policy head
+        self.fc1 = nn.Linear(128 * BOARD_SIZE * BOARD_SIZE, 256)
+        self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)  # Policy head
 
     def forward(self, board):
         x = _format_board_for_nn(board)
@@ -34,14 +35,13 @@ class PolicyNN(nn.Module):
         policy_output = policy_output * mask
         _, predicted = torch.max(policy_output, 1)
         move_as_int = predicted.item()
-        move_as_coordinates = _index_to_move(move_as_int, board.size)
+        move_as_coordinates = _index_to_move(move_as_int)
 
         return move_as_coordinates
 
 
 def _legal_move_mask(board, color):
-    board_size = board.size
-    mask_size = board_size * board_size + 1
+    mask_size = BOARD_SIZE * BOARD_SIZE + 1
     mask = torch.zeros(mask_size, dtype=torch.float32)
     possible_moves = board.legal_moves(color)
     for move in possible_moves:
@@ -49,7 +49,7 @@ def _legal_move_mask(board, color):
             mask[-1] = 1
         else:
             x, y = move
-            index = x * board_size + y
+            index = x * BOARD_SIZE + y
             mask[index] = 1
     return mask
 
@@ -61,18 +61,19 @@ def _format_board_for_nn(board):
     return x
 
 
-def _index_to_move(index, board_size):
+def _index_to_move(index):
     """ Returns a unique set of coordinates for each integer. """
-    if index == board_size * board_size:
+    if index == BOARD_SIZE * BOARD_SIZE:
         return "pass"
     else:
-        x, y = divmod(index, board_size)
+        x, y = divmod(index, BOARD_SIZE)
         return (x, y)
 
 
 if __name__ == '__main__':
-    board = GoBoard(size=19)
-    model = PolicyNN(board, color=1)
+    from nanoAlphaGo.config import WHITE, BOARD_SIZE
+    board = GoBoard()
+    model = PolicyNN(color=WHITE)
     move = model.generate_move(board)
     print("Predicted move:", move)
 

@@ -1,6 +1,8 @@
 import numpy as np
+import pytest
 
 from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.play import BLACK, WHITE
 
 
 def test_board_initialisation():
@@ -20,13 +22,24 @@ def test_getting_legal_moves():
     board = GoBoard(size=9)
     assert_first_move_options_are_correct(board)
     board = _setup_a_simple_board()
-    moves_for_white = board.legal_moves(-1)
+    moves_for_white = board.legal_moves(WHITE)
     assert len(moves_for_white) == 9*9 + 1 - 3
+
 
 def test_we_dont_allow_illegal_moves():
     _check_the_no_suicide_rule()
     _check_that_intersections_must_be_empty()
     _check_that_position_must_be_on_board()
+
+
+def test_making_a_move_on_the_board():
+    board = _setup_a_simple_board()
+    board.apply_move((3,3), BLACK)
+    assert board.board[3,3] == BLACK
+
+    with pytest.raises(AssertionError):
+        """ Can't make illegal moves. """
+        board.apply_move((3,3), WHITE)
 
 
 def _check_the_no_suicide_rule():

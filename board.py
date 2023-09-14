@@ -1,10 +1,11 @@
 import numpy as np
 
+from nanoAlphaGo.config import BOARD_SIZE
 
 class GoBoard:
-    def __init__(self, size=19):
+    def __init__(self, size=BOARD_SIZE):
         self.size = size
-        self.board = np.zeros((size, size), dtype=int)  # 0=empty, 1=black, -1=white
+        self.board = np.zeros((size, size), dtype=int)
         self.previous_board = None  # To check for Ko rule
 
     def legal_moves(self, color):
@@ -68,6 +69,7 @@ class GoBoard:
         return n_unique_liberties
 
     def apply_move(self, move, color):
+        assert self.is_valid_move(move, color)
         if move == 'pass':
             return
 

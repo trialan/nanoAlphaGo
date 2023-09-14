@@ -5,21 +5,20 @@ from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, _legal_move_mask
 
 
 def test_that_model_is_outputting_moves_as_coordinates():
-    board = GoBoard(size=19)
-    policy = PolicyNN(board, color=1)
+    board = GoBoard()
+    policy = PolicyNN(color=1)
     for _ in range(10):
         move = policy.generate_move(board)
         assert_move_is_a_pair_of_coordinates(move)
 
 
 def test_that_index_to_move_mapping_is_unique():
-    typical_board_size = 19
-    board = GoBoard(size=typical_board_size)
+    board = GoBoard()
     coordinates = []
-    for i in range(typical_board_size**2+1):
-        move = _index_to_move(i, typical_board_size)
+    for i in range(board.size**2+1):
+        move = _index_to_move(i)
         coordinates.append(move)
-    assert len(set(coordinates)) == typical_board_size**2 + 1
+    assert len(set(coordinates)) == board.size**2 + 1
 
 
 def test_we_are_masking_the_right_number_of_moves():

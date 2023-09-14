@@ -1,9 +1,7 @@
 from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.config import BLACK, WHITE, BOARD_SIZE
 from nanoAlphaGo.rl.policy import PolicyNN
-from nanoAlphaGo.rendering import display_board
-
-BLACK = 1
-WHITE = -1
+from nanoAlphaGo.graphics.rendering import display_board
 
 
 def play_turn(policy, board, history):
@@ -14,9 +12,9 @@ def play_turn(policy, board, history):
 
 
 if __name__ == '__main__':
-    board = GoBoard(size=19)
-    black_policy = PolicyNN(board, color=BLACK)
-    white_policy = PolicyNN(board, color=WHITE)
+    board = GoBoard(BOARD_SIZE)
+    black_policy = PolicyNN(color=BLACK)
+    white_policy = PolicyNN(color=WHITE)
 
     game_history = []
 
