@@ -12,6 +12,7 @@
     a slight disadvantage as black plays first. """
 
 import numpy as np
+import torch
 
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
@@ -34,12 +35,13 @@ def play_game(policy):
     moves = []
     rewards = []
     board_states = []
+    policy_probs = []
     consecutive_passes = 0
 
     player = BLACK
     while not game_is_over(board, consecutive_passes, player):
         board_state = np.copy(board.matrix)
-        move = players[player].generate_move(board)
+        move, probs = players[player].get_policy_output(board)
         if move == "pass":
             consecutive_passes += 1
         else:
@@ -48,12 +50,14 @@ def play_game(policy):
         moves.append(move)
         rewards.append(0)
         board_states.append(board_state)
+        policy_probs.append(probs)
         player = -player
     rewards[-1] = calculate_outcome_for_player(board, policy.color)
 
-    trajectory = {"rewards": rewards,
-                  "moves": moves,
-                  "board_states": board_states}
+    trajectory = {"rewards": torch.tensor(rewards),
+                  "moves": torch.tensor(moves),
+                  "board_states": torch.tensor(board_states),
+                  "move_probs": torch.tensor(policy_probs)}
 
     return trajectory
 

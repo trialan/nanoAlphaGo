@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.config import WHITE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import value_function, ValueNN
@@ -24,9 +25,8 @@ def ppo_train(policyNN, valueNN):
     for k in range(n_trajectories):
         trajectories = collect_trajectories(policyNN, n_trajectories)
         trajectories = compute_rewards_to_go(trajectories)
-        advantages = compute_advantages(rewards_to_go,
-                                        valueNN,
-                                        trajectories)
+        advantages = compute_advantages(trajectories,
+                                        valueNN)
         update_policy_ppoclip(policy_optimizer,
                               policyNN,
                               trajectories,
@@ -50,7 +50,7 @@ def compute_advantages(trajectories, valueNN):
         rewards_to_go = trajectory['rewards_to_go']
         states = trajectory['board_states']
 
-        values = value_function(valueNN, states)
+        values = value_function(states, valueNN)
         if torch.is_tensor(values):  # Convert tensor to numpy array for consistency
             values = values.detach().numpy()
 
@@ -70,10 +70,10 @@ def compute_advantages(trajectories, valueNN):
     return advantages_list
 
 
-def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages, epsilon):
+def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages):
     for _ in range(policy_epochs):
         optimizer.zero_grad()
-        states, actions, old_probs = zip(*[(t['states'], t['actions'], t['action_probs']) for t in trajectories])
+        states, actions, old_probs = zip(*[(t['board_states'], t['moves'], t['move_probs']) for t in trajectories])
         states = torch.cat(states)
         actions = torch.cat(actions)
         old_probs = torch.cat(old_probs)
@@ -105,8 +105,8 @@ def setup_optimizers(policyNN, valueNN):
     return policy_optimizer, value_optimizer
 
 
-def _compute_rtg_single_trajectory(t):
-    outcome = trajectory[-1]['reward']
+def _compute_rtg_single_trajectory(trajectory):
+    outcome = trajectory['rewards'][-1]
     n_zeros = len(trajectory) - 1
     rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
     trajectory['rewards_to_go'] = rewards_to_go
@@ -115,5 +115,5 @@ def _compute_rtg_single_trajectory(t):
 
 if __name__ == '__main__':
     board = GoBoard()
-    ppo_train(PolicyNN(WHITE), ValueNN())
+    ppo_train(PolicyNN(WHITE), ValueNN(board))
 

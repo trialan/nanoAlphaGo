@@ -1,5 +1,6 @@
 import numpy as np
 
+from nanoAlphaGo.config import PASS
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, _legal_move_mask
 
@@ -8,7 +9,7 @@ def test_that_model_is_outputting_moves_as_coordinates():
     board = GoBoard()
     policy = PolicyNN(color=1)
     for _ in range(10):
-        move = policy.generate_move(board)
+        move = policy.get_move(board)
         assert_move_is_a_pair_of_coordinates(move)
 
 

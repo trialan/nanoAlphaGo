@@ -5,7 +5,7 @@ from nanoAlphaGo.graphics.rendering import display_board
 
 
 def play_turn(policy, board, history):
-    move = policy.generate_move(board)
+    move = policy.get_move(board)
     board.apply_move(move, policy.color)
     history.append(move)
     display_board(board)

@@ -2,13 +2,17 @@ import torch
 import torch.nn as nn
 
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.rl.policy import _format_board_for_nn
+from nanoAlphaGo.rl.utils import _format_board_for_nn
 
 
-def value_function(board_states):
+def value_function(board_states, valueNN):
     values = []
     board = GoBoard()
-
+    for state in board_states:
+        board.matrix = state
+        value = valueNN.get_value(board)
+        values.append(value)
+    return values
 
 
 class ValueNN(nn.Module):

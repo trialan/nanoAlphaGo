@@ -13,7 +13,8 @@ def test_collecting_trajectories():
     assert len(trajectories) == 5
     assert set(trajectories[0].keys()) == {'rewards',
                                            'moves',
-                                           'board_states'}
+                                           'board_states',
+                                           "move_probs"}
     assert all([sum(t['rewards']) in {-1,0,1} for t in trajectories])
 
 

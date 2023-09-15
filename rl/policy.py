@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.config import BOARD_SIZE
-
+from nanoAlphaGo.config import BOARD_SIZE, PASS
+from nanoAlphaGo.rl.utils import _format_board_for_nn, _index_to_move
 
 
 class PolicyNN(nn.Module):
@@ -30,12 +30,16 @@ class PolicyNN(nn.Module):
         normalised_policy_output = torch.sigmoid(policy_output)
         return normalised_policy_output
 
-    def generate_move(self, board):
+    def get_policy_output(self, board):
         raw_policy_output = self.forward(board)
         mask = _legal_move_mask(board, self.color)
         policy_output = raw_policy_output * mask
         _, predicted = torch.max(policy_output, 1)
         move_as_int = predicted.item()
+        return move_as_int, policy_output
+
+    def get_move(self, board):
+        move_as_int, probs = self.get_policy_output(board)
         move_as_coordinates = _index_to_move(move_as_int)
         assert board.is_valid_move(move_as_coordinates, self.color)
         return move_as_coordinates
@@ -47,7 +51,7 @@ def _legal_move_mask(board, color):
     mask = torch.zeros(mask_size, dtype=torch.float32)
     possible_moves = board.legal_moves(color)
     for move in possible_moves:
-        if move == 'pass':
+        if move == PASS:
             mask[-1] = 1
         else:
             x, y = move
@@ -56,27 +60,12 @@ def _legal_move_mask(board, color):
     return mask
 
 
-def _format_board_for_nn(board):
-    """ Conv2D wants a 4D input. """
-    x = torch.tensor(board.matrix, dtype=torch.float32)
-    x = x.unsqueeze(0).unsqueeze(0)
-    return x
-
-
-def _index_to_move(index):
-    """ Returns a unique set of coordinates for each integer. """
-    if index == BOARD_SIZE * BOARD_SIZE:
-        return "pass"
-    else:
-        x, y = divmod(index, BOARD_SIZE)
-        return (x, y)
-
 
 if __name__ == '__main__':
     from nanoAlphaGo.config import WHITE, BOARD_SIZE
     board = GoBoard()
     model = PolicyNN(color=WHITE)
-    move = model.generate_move(board)
+    move, _ = model.get_policy_output(board)
     print("Predicted move:", move)
 
 

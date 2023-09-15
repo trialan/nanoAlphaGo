@@ -1,6 +1,7 @@
 import numpy as np
 
-from nanoAlphaGo.config import BOARD_SIZE
+from nanoAlphaGo.config import BOARD_SIZE, PASS
+from nanoAlphaGo.rl.utils import _index_to_move
 
 class GoBoard:
     def __init__(self, size=BOARD_SIZE):
@@ -15,11 +16,11 @@ class GoBoard:
                 if self.matrix[x, y] == 0:
                     if self.is_valid_move((x, y), color):
                         moves.append((x, y))
-        moves.append('pass')
+        moves.append(PASS)
         return moves
 
     def is_valid_move(self, position, color):
-        if position == 'pass':
+        if position == PASS:
             return True
 
         x, y = position
@@ -72,8 +73,9 @@ class GoBoard:
         return n_unique_liberties
 
     def apply_move(self, move, color):
+        move = _index_to_move(move)
         assert self.is_valid_move(move, color)
-        if move == 'pass':
+        if move == PASS:
             return
 
         x, y = move
