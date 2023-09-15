@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BOARD_SIZE
 
 
@@ -17,7 +17,7 @@ class PolicyNN(nn.Module):
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(128 * BOARD_SIZE * BOARD_SIZE, 256)
-        self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)  # Policy head
+        self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)
 
     def forward(self, board):
         x = _format_board_for_nn(board)
@@ -27,17 +27,19 @@ class PolicyNN(nn.Module):
         x = nn.functional.relu(self.fc1(x))
 
         policy_output = self.fc_policy(x)
-        return policy_output
+        normalised_policy_output = torch.sigmoid(policy_output)
+        return normalised_policy_output
 
     def generate_move(self, board):
-        policy_output = self.forward(board)
+        raw_policy_output = self.forward(board)
         mask = _legal_move_mask(board, self.color)
-        policy_output = policy_output * mask
+        policy_output = raw_policy_output * mask
         _, predicted = torch.max(policy_output, 1)
         move_as_int = predicted.item()
         move_as_coordinates = _index_to_move(move_as_int)
-
+        assert board.is_valid_move(move_as_coordinates, self.color)
         return move_as_coordinates
+
 
 
 def _legal_move_mask(board, color):

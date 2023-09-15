@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.play import BLACK, WHITE
 
 

@@ -1,4 +1,4 @@
-from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE, BOARD_SIZE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.graphics.rendering import display_board

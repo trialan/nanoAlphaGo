@@ -19,6 +19,9 @@ class GoBoard:
         return moves
 
     def is_valid_move(self, position, color):
+        if position == 'pass':
+            return True
+
         x, y = position
         valid = True
 
@@ -75,6 +78,7 @@ class GoBoard:
 
         x, y = move
         self.board[x, y] = color
+
         opponent = -color
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nx, ny = x + dx, y + dy
@@ -82,23 +86,25 @@ class GoBoard:
                 continue
             if self.board[nx, ny] == opponent:
                 if self.count_liberties((nx, ny)) == 0:
-                    self._remove_group((nx, ny))
+                    captured_stones = self._remove_group((nx, ny))
 
+    def _remove_group(self, position):
+        stack = [position]
+        color = self.board[position]
+        captured_count = 0
 
-def _remove_group(self, position):
-    stack = [position]
-    color = self.board[position]
+        while stack:
+            x, y = stack.pop()
 
-    while stack:
-        x, y = stack.pop()
+            if self.board[x, y] == color:
+                self.board[x, y] = 0  # Remove the stone
+                captured_count += 1  # Increment the number of captured stones
 
-        if self.board[x, y] == color:
-            self.board[x, y] = 0  # Remove the stone
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nx, ny = x + dx, y + dy
 
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                nx, ny = x + dx, y + dy
+                    if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
+                        continue
 
-                if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
-                    continue
-
-                stack.append((nx, ny))
+                    stack.append((nx, ny))
+        return captured_count

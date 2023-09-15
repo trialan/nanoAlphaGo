@@ -13,7 +13,7 @@
 
 import numpy as np
 
-from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.graphics.rendering import display_board
@@ -46,6 +46,7 @@ def play_game(policy):
             "board_state": board_state,
             "move": move})
         player = -player
+    import pdb;pdb.set_trace() 
     return trajectory
 
 

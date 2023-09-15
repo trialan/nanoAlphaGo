@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
+from nanoAlphaGo.rl.trajectories import collect_trajectories
+
 n_trajectories = 10
 learning_rate_policy = 0.001
 learning_rate_value = 0.001

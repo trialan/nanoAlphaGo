@@ -1,6 +1,6 @@
 import numpy as np
 
-from nanoAlphaGo.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, _legal_move_mask
 
 
@@ -47,6 +47,9 @@ def _setup_a_complicated_board():
 
 
 def assert_move_is_a_pair_of_coordinates(move):
+    if move == 'pass':
+        assert True
+        return
     assert type(move) == tuple
     assert len(move) == 2
     assert type(move[0]) == int
