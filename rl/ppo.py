@@ -2,7 +2,11 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
+from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.trajectories import collect_trajectories
+from nanoAlphaGo.rl.value import value_function, ValueNN
+
 
 n_trajectories = 10
 learning_rate_policy = 0.001
@@ -10,17 +14,16 @@ learning_rate_value = 0.001
 epsilon = 0.2
 policy_epochs = 4
 value_epochs = 4
-
-policy_optimizer = optim.Adam(policyNN.parameters(),
-                              lr=learning_rate_policy)
-value_optimizer = optim.Adam(valueNN.parameters(),
-                             lr=learning_rate_value)
+gamma=0.99
+lambda_=0.95
 
 
 def ppo_train(policyNN, valueNN):
+    optimizers = setup_optimizers(policyNN, valueNN)
+    policy_optimizer, value_optimizer = optimizers
     for k in range(n_trajectories):
         trajectories = collect_trajectories(policyNN, n_trajectories)
-        rewards_to_go = compute_reward_to_go(trajectories)
+        trajectories = compute_rewards_to_go(trajectories)
         advantages = compute_advantages(rewards_to_go,
                                         valueNN,
                                         trajectories)
@@ -34,13 +37,37 @@ def ppo_train(policyNN, valueNN):
                                   rewards_to_go)
 
 
+def compute_rewards_to_go(trajectories):
+    rewards_to_go_list = []
+    for trajectory in trajectories:
+        trajectory = _compute_rtg_single_trajectory(trajectory)
+    return trajectories
 
-def compute_reward_to_go(trajectories):
-    pass
 
+def compute_advantages(trajectories, valueNN):
+    advantages_list = []
+    for trajectory in trajectories:
+        rewards_to_go = trajectory['rewards_to_go']
+        states = trajectory['board_states']
 
-def compute_advantages(rewards_to_go, valueNN, trajectories):
-    pass
+        values = value_function(valueNN, states)
+        if torch.is_tensor(values):  # Convert tensor to numpy array for consistency
+            values = values.detach().numpy()
+
+        advantages = []
+        gae = 0
+
+        # Compute the Generalized Advantage Estimation in reverse order for efficiency
+        for t in reversed(range(len(rewards_to_go))):
+            delta = rewards_to_go[t] - values[t]
+            if t < len(rewards_to_go) - 1:  # Avoid out-of-index error on last timestep
+                delta += gamma * values[t+1]
+            gae = delta + gamma * lambda_ * gae
+            advantages.insert(0, gae)
+
+        advantages_list.append(advantages)
+
+    return advantages_list
 
 
 def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages, epsilon):
@@ -68,4 +95,25 @@ def update_value_function_mse(optimizer, valueNN, trajectories, rewards_to_go):
         loss = F.mse_loss(values, rewards_to_go)
         loss.backward()
         optimizer.step()
+
+
+def setup_optimizers(policyNN, valueNN):
+    policy_optimizer = optim.Adam(policyNN.parameters(),
+                                  lr=learning_rate_policy)
+    value_optimizer = optim.Adam(valueNN.parameters(),
+                                 lr=learning_rate_value)
+    return policy_optimizer, value_optimizer
+
+
+def _compute_rtg_single_trajectory(t):
+    outcome = trajectory[-1]['reward']
+    n_zeros = len(trajectory) - 1
+    rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
+    trajectory['rewards_to_go'] = rewards_to_go
+    return trajectory
+
+
+if __name__ == '__main__':
+    board = GoBoard()
+    ppo_train(PolicyNN(WHITE), ValueNN())
 

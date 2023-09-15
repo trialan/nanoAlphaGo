@@ -17,6 +17,7 @@ from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.graphics.rendering import display_board
+from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 
 
 def collect_trajectories(policyNN, n_trajectories):
@@ -30,23 +31,30 @@ def play_game(policy):
     players = {WHITE: policy,
                BLACK: adversary}
 
-    trajectory = []
+    moves = []
+    rewards = []
+    board_states = []
     consecutive_passes = 0
 
     player = BLACK
     while not game_is_over(board, consecutive_passes, player):
-        board_state = np.copy(board.board)
+        board_state = np.copy(board.matrix)
         move = players[player].generate_move(board)
         if move == "pass":
             consecutive_passes += 1
         else:
             consecutive_passes = 0
             board.apply_move(move, player)
-        trajectory.append({
-            "board_state": board_state,
-            "move": move})
+        moves.append(move)
+        rewards.append(0)
+        board_states.append(board_state)
         player = -player
-    import pdb;pdb.set_trace() 
+    rewards[-1] = calculate_outcome_for_player(board, policy.color)
+
+    trajectory = {"rewards": rewards,
+                  "moves": moves,
+                  "board_states": board_states}
+
     return trajectory
 
 

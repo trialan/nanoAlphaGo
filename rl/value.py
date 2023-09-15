@@ -1,6 +1,16 @@
 import torch
 import torch.nn as nn
 
+from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.rl.policy import _format_board_for_nn
+
+
+def value_function(board_states):
+    values = []
+    board = GoBoard()
+
+
+
 class ValueNN(nn.Module):
     def __init__(self, board):
         super(ValueNN, self).__init__()

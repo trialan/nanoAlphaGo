@@ -58,7 +58,7 @@ def _legal_move_mask(board, color):
 
 def _format_board_for_nn(board):
     """ Conv2D wants a 4D input. """
-    x = torch.tensor(board.board, dtype=torch.float32)
+    x = torch.tensor(board.matrix, dtype=torch.float32)
     x = x.unsqueeze(0).unsqueeze(0)
     return x
 

@@ -7,7 +7,7 @@ from nanoAlphaGo.play import BLACK, WHITE
 
 def test_board_initialisation():
     board = GoBoard(size=19)
-    assert_board_is_initially_empty(board.board)
+    assert_board_is_initially_empty(board.matrix)
 
 
 def test_counting_the_number_of_liberties():
@@ -35,7 +35,7 @@ def test_we_dont_allow_illegal_moves():
 def test_making_a_move_on_the_board():
     board = _setup_a_simple_board()
     board.apply_move((3,3), BLACK)
-    assert board.board[3,3] == BLACK
+    assert board.matrix[3,3] == BLACK
 
     with pytest.raises(AssertionError):
         """ Can't make illegal moves. """
@@ -84,7 +84,7 @@ def assert_first_move_options_are_correct(board):
 
 def _setup_a_simple_board():
     board = GoBoard(size=9)
-    board.board = np.array([[1,0,0,0,0,0,0,0,0],
+    board.matrix = np.array([[1,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -98,7 +98,7 @@ def _setup_a_simple_board():
 
 def _setup_a_board_where_suicide_would_be_possible():
     board = GoBoard(size=9)
-    board.board = np.array([[1,1,-1,0,0,0,0,0,0],
+    board.matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -112,7 +112,7 @@ def _setup_a_board_where_suicide_would_be_possible():
 
 def _setup_a_complicated_board():
     board = GoBoard(size=9)
-    board.board = np.array([[1,1,-1,0,0,0,0,0,0],
+    board.matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],

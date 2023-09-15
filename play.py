@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     game_history = []
 
-    for _ in range(2):
+    for _ in range(20):
         play_turn(white_policy, board, game_history)
         play_turn(black_policy, board, game_history)
         print(game_history)

@@ -28,13 +28,13 @@ def test_we_are_masking_the_right_number_of_moves():
 
     board = _setup_a_complicated_board()
     mask = _legal_move_mask(board, -1)
-    number_of_stones_on_board = np.count_nonzero(board.board)
+    number_of_stones_on_board = np.count_nonzero(board.matrix)
     assert sum(mask) == 9 * 9 + 1 - number_of_stones_on_board
 
 
 def _setup_a_complicated_board():
     board = GoBoard(size=9)
-    board.board = np.array([[1,1,-1,0,0,0,0,0,0],
+    board.matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],

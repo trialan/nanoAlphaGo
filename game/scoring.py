@@ -7,11 +7,23 @@ NEIGHBORS = {(x, y): [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
              for x in range(BOARD_SIZE) for y in range(BOARD_SIZE)}
 
 
-def calculate_score(board, komi=KOMI):
-    working_board = board.board.copy()
+def calculate_outcome_for_player(board, color):
+    score = calculate_score(board.matrix)
+    player_won = score[color] > score[-color]
+    if player_won:
+        return 1
+    draw = score[color] == score[-color]
+    if draw:
+        return 0
+    else:
+        return -1
+
+
+def calculate_score(board_matrix, komi=KOMI):
+    working_board = board_matrix.copy()
     working_board = assign_positions_to_players(working_board)
     black_score, white_score = count_player_positions(working_board)
-    return {'black': black_score, 'white': white_score + komi}
+    return {BLACK: black_score, WHITE: white_score + komi}
 
 
 def assign_positions_to_players(working_board):
