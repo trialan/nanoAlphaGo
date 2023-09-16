@@ -45,7 +45,6 @@ class PolicyNN(nn.Module):
         return move_as_coordinates
 
 
-
 def _legal_move_mask(board, color):
     mask_size = BOARD_SIZE * BOARD_SIZE + 1
     mask = torch.zeros(mask_size, dtype=torch.float32)
@@ -65,7 +64,8 @@ if __name__ == '__main__':
     from nanoAlphaGo.config import WHITE, BOARD_SIZE
     board = GoBoard()
     model = PolicyNN(color=WHITE)
-    move, _ = model.get_policy_output(board)
-    print("Predicted move:", move)
+    for _ in range(100):
+        move, _ = model.get_policy_output(board)
+        print("Predicted move:", move)
 
 

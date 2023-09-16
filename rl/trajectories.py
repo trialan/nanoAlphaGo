@@ -15,7 +15,7 @@ import numpy as np
 import torch
 
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.config import BLACK, WHITE
+from nanoAlphaGo.config import BLACK, WHITE, PASS
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
@@ -31,6 +31,7 @@ def play_game(policy):
     adversary = PolicyNN(BLACK)
     players = {WHITE: policy,
                BLACK: adversary}
+    import time
 
     moves = []
     rewards = []
@@ -42,7 +43,9 @@ def play_game(policy):
     while not game_is_over(board, consecutive_passes, player):
         board_state = np.copy(board.matrix)
         move, probs = players[player].get_policy_output(board)
-        if move == "pass":
+        print(consecutive_passes)
+        time.sleep(0.05)
+        if move == PASS:
             consecutive_passes += 1
         else:
             consecutive_passes = 0
@@ -52,13 +55,12 @@ def play_game(policy):
         board_states.append(board_state)
         policy_probs.append(probs)
         player = -player
-    rewards[-1] = calculate_outcome_for_player(board, policy.color)
 
+    rewards[-1] = calculate_outcome_for_player(board, policy.color)
     trajectory = {"rewards": torch.tensor(rewards),
                   "moves": torch.tensor(moves),
                   "board_states": torch.tensor(board_states),
                   "move_probs": torch.tensor(policy_probs)}
-
     return trajectory
 
 
@@ -71,4 +73,5 @@ def game_is_over(board, consecutive_passes, turn):
 if __name__ == '__main__':
     policy = PolicyNN(color=WHITE)
     t = play_game(policy)
+
 

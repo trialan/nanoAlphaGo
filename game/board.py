@@ -75,6 +75,7 @@ class GoBoard:
     def apply_move(self, move, color):
         move = _index_to_move(move)
         assert self.is_valid_move(move, color)
+
         if move == PASS:
             return
 

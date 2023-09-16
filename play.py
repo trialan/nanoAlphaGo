@@ -8,7 +8,8 @@ def play_turn(policy, board, history):
     move = policy.get_move(board)
     board.apply_move(move, policy.color)
     history.append(move)
-    display_board(board)
+    #display_board(board)
+    return move
 
 
 if __name__ == '__main__':
@@ -18,9 +19,10 @@ if __name__ == '__main__':
 
     game_history = []
 
-    for _ in range(20):
-        play_turn(white_policy, board, game_history)
-        play_turn(black_policy, board, game_history)
-        print(game_history)
+    for _ in range(50):
+        move_white = play_turn(white_policy, board, game_history)
+        move_black = play_turn(black_policy, board, game_history)
+        print(move_white)
+        print(move_black)
 
 

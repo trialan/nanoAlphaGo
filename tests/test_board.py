@@ -34,12 +34,12 @@ def test_we_dont_allow_illegal_moves():
 
 def test_making_a_move_on_the_board():
     board = _setup_a_simple_board()
-    board.apply_move((3,3), BLACK)
+    board.apply_move(30, BLACK)
     assert board.matrix[3,3] == BLACK
 
     with pytest.raises(AssertionError):
         """ Can't make illegal moves. """
-        board.apply_move((3,3), WHITE)
+        board.apply_move(30, WHITE)
 
 
 def _check_the_no_suicide_rule():
