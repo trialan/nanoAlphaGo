@@ -5,7 +5,7 @@ from nanoAlphaGo.game.board import GoBoard
 
 """
 Next step:
-    - make this batched by default (19:15, 16/09/23)
+    - make this batched by default (19:15, 16/09/23).
 """
 
 def value_function(board_states, valueNN):
