@@ -8,7 +8,7 @@ NEIGHBORS = {(x, y): [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
 
 
 def calculate_outcome_for_player(board, color):
-    score = calculate_score(board.matrix)
+    score = calculate_score(board._matrix)
     player_won = score[color] > score[-color]
     if player_won:
         return 1

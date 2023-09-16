@@ -3,10 +3,10 @@ import torch
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 
 
-def _format_board_for_nn(board):
+def _nn_tensor_from_matrix(board_matrix):
     """ Conv2D wants a 4D input. """
-    x = torch.tensor(board.matrix, dtype=torch.float32)
-    x = x.unsqueeze(0).unsqueeze(0)
+    x = torch.tensor(board_matrix, dtype=torch.float32)
+    x = x.unsqueeze(0)
     return x
 
 

@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.play import BLACK, WHITE
+from nanoAlphaGo.config import BLACK, WHITE
 
 
 def test_board_initialisation():
     board = GoBoard(size=19)
-    assert_board_is_initially_empty(board.matrix)
+    assert_board_is_initially_empty(board)
 
 
 def test_counting_the_number_of_liberties():
@@ -35,7 +35,8 @@ def test_we_dont_allow_illegal_moves():
 def test_making_a_move_on_the_board():
     board = _setup_a_simple_board()
     board.apply_move(30, BLACK)
-    assert board.matrix[3,3] == BLACK
+    assert board._matrix[3,3] == BLACK
+    assert_that_tensor_is_same_board_as_matrix(board)
 
     with pytest.raises(AssertionError):
         """ Can't make illegal moves. """
@@ -67,10 +68,13 @@ def assert_these_are_all_bad_moves(board, bad_moves):
         assert not board.is_valid_move(bad_move, -1)
 
 
+def assert_that_tensor_is_same_board_as_matrix(board):
+    assert np.array_equal(board.tensor[0].numpy(),
+                          board._matrix)
+
 
 def assert_board_is_initially_empty(board):
-    row_wise_sum = np.sum(board, axis=1)
-    assert np.sum(row_wise_sum) == 0
+    assert board._matrix.sum() == 0
 
 
 def assert_first_move_options_are_correct(board):
@@ -84,7 +88,7 @@ def assert_first_move_options_are_correct(board):
 
 def _setup_a_simple_board():
     board = GoBoard(size=9)
-    board.matrix = np.array([[1,0,0,0,0,0,0,0,0],
+    board._matrix = np.array([[1,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -98,7 +102,7 @@ def _setup_a_simple_board():
 
 def _setup_a_board_where_suicide_would_be_possible():
     board = GoBoard(size=9)
-    board.matrix = np.array([[1,1,-1,0,0,0,0,0,0],
+    board._matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -112,7 +116,7 @@ def _setup_a_board_where_suicide_would_be_possible():
 
 def _setup_a_complicated_board():
     board = GoBoard(size=9)
-    board.matrix = np.array([[1,1,-1,0,0,0,0,0,0],
+    board._matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],

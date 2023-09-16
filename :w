@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 from nanoAlphaGo.config import PASS, WHITE, BLACK, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard
@@ -11,11 +10,8 @@ def test_that_model_is_outputting_moves_as_coordinates():
     board = GoBoard()
     policy = PolicyNN(color=1)
     for _ in range(100):
-        #Must unsqueeze as forward expects batches
-        batch = board.tensor.unsqueeze(0)
-        move_probs = policy.forward(batch)
-        move = policy.get_move_as_int_from_prob_dist(move_probs, board.tensor)
-        move = _index_to_move(move)
+        move_probs = policy.forward(board.tensor)
+        move = policy.get_move(board)
         assert_move_is_a_pair_of_coordinates_or_pass(move)
 
 
@@ -30,17 +26,13 @@ def test_that_index_to_move_mapping_is_unique():
 
 def test_we_are_masking_the_right_number_of_moves():
     board = GoBoard()
-    batch = board.tensor.unsqueeze(0)
-    # Function expects a batch of tensors
-    masks = _legal_move_mask(batch, BLACK)
-    assert len(masks) == 1
-    assert torch.sum(masks) == BOARD_SIZE * BOARD_SIZE + 1
+    mask = _legal_move_mask(board.tensor, BLACK)
+    assert sum(mask) == BOARD_SIZE * BOARD_SIZE + 1
 
     board = _setup_a_complicated_board()
-    batch = board.tensor.unsqueeze(0)
-    masks = _legal_move_mask(batch, WHITE)
+    mask = _legal_move_mask(board.tensor, WHITE)
     number_of_stones_on_board = np.count_nonzero(board._matrix)
-    assert torch.sum(masks) == BOARD_SIZE * BOARD_SIZE + 1 - number_of_stones_on_board
+    assert sum(mask) == 9 * 9 + 1 - number_of_stones_on_board
 
 
 def _setup_a_complicated_board():

@@ -1,19 +1,29 @@
 import numpy as np
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS
-from nanoAlphaGo.rl.utils import _index_to_move
+from nanoAlphaGo.rl.utils import _index_to_move, _nn_tensor_from_matrix
+
+"""
+Bad things about this code:
+    - It's confusing to have both self._matrix and self.tensor,
+      ideally we'd only have self.tensor.
+"""
 
 class GoBoard:
-    def __init__(self, size=BOARD_SIZE):
+    def __init__(self, size=BOARD_SIZE, initial_state_matrix=None):
         self.size = size
-        self.matrix = np.zeros((size, size), dtype=int)
+        if initial_state_matrix is None:
+            self._matrix = np.zeros((size, size), dtype=int)
+        else:
+            self._matrix = initial_state_matrix
+        self.tensor = _nn_tensor_from_matrix(self._matrix)
         self.previous_board = None  # To check for Ko rule
 
     def legal_moves(self, color):
         moves = []
         for x in range(self.size):
             for y in range(self.size):
-                if self.matrix[x, y] == 0:
+                if self._matrix[x, y] == 0:
                     if self.is_valid_move((x, y), color):
                         moves.append((x, y))
         moves.append(PASS)
@@ -31,15 +41,15 @@ class GoBoard:
             valid = False
 
         # Intersection check
-        elif self.matrix[x, y] != 0:
+        elif self._matrix[x, y] != 0:
             valid = False
 
         else:
             # Temporary place the stone to check for suicide rule
-            self.matrix[x, y] = color
+            self._matrix[x, y] = color
             if self.count_liberties(position) == 0:
                 valid = False
-            self.matrix[x, y] = 0  # Reset the position to its original state
+            self._matrix[x, y] = 0  # Reset the position to its original state
 
         # TODO: Check for Ko rule
         return valid
@@ -49,7 +59,7 @@ class GoBoard:
         liberties_set = set()
         visited = set()
 
-        color = self.matrix[position]
+        color = self._matrix[position]
 
         while stack:
             x, y = stack.pop()
@@ -63,10 +73,10 @@ class GoBoard:
                 if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
                     continue
 
-                if self.matrix[nx, ny] == 0:
+                if self._matrix[nx, ny] == 0:
                     liberties_set.add((nx, ny))
 
-                elif self.matrix[nx, ny] == color and (nx, ny) not in visited:
+                elif self._matrix[nx, ny] == color and (nx, ny) not in visited:
                     stack.append((nx, ny))
 
         n_unique_liberties = len(liberties_set)
@@ -80,27 +90,28 @@ class GoBoard:
             return
 
         x, y = move
-        self.matrix[x, y] = color
+        self._matrix[x, y] = color
 
         opponent = -color
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nx, ny = x + dx, y + dy
             if nx < 0 or ny < 0 or nx >= self.size or ny >= self.size:
                 continue
-            if self.matrix[nx, ny] == opponent:
+            if self._matrix[nx, ny] == opponent:
                 if self.count_liberties((nx, ny)) == 0:
                     captured_stones = self._remove_group((nx, ny))
+        self.tensor = _nn_tensor_from_matrix(self._matrix)
 
     def _remove_group(self, position):
         stack = [position]
-        color = self.matrix[position]
+        color = self._matrix[position]
         captured_count = 0
 
         while stack:
             x, y = stack.pop()
 
-            if self.matrix[x, y] == color:
-                self.matrix[x, y] = 0  # Remove the stone
+            if self._matrix[x, y] == color:
+                self._matrix[x, y] = 0  # Remove the stone
                 captured_count += 1  # Increment the number of captured stones
 
                 for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:

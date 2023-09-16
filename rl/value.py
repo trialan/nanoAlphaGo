@@ -2,8 +2,11 @@ import torch
 import torch.nn as nn
 
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.rl.utils import _format_board_for_nn
 
+"""
+Next step:
+    - make this batched by default (19:15, 16/09/23)
+"""
 
 def value_function(board_states, valueNN):
     values = []
@@ -26,8 +29,7 @@ class ValueNN(nn.Module):
         self.fc_value = nn.Linear(256, 1)  # Value head
 
     def forward(self, board):
-        x = _format_board_for_nn(board)
-        x = nn.functional.relu(self.conv1(x))
+        x = nn.functional.relu(self.conv1(board.tensor))
         x = nn.functional.relu(self.conv2(x))
         x = x.view(x.size(0), -1)
         x = nn.functional.relu(self.fc1(x))

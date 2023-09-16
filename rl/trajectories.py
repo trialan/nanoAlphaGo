@@ -9,7 +9,8 @@
     as of 14/09/23) or there are no more legal moves.
 
     Our RL agent will always play white for now (14/09/23), this gives it
-    a slight disadvantage as black plays first. """
+    a slight disadvantage as black plays first (this is typically adjusted
+    by imposing a komi. """
 
 import numpy as np
 import torch
@@ -31,7 +32,6 @@ def play_game(policy):
     adversary = PolicyNN(BLACK)
     players = {WHITE: policy,
                BLACK: adversary}
-    import time
 
     moves = []
     rewards = []
@@ -41,15 +41,18 @@ def play_game(policy):
 
     player = BLACK
     while not game_is_over(board, consecutive_passes, player):
-        board_state = np.copy(board.matrix)
-        move, probs = players[player].get_policy_output(board)
-        print(consecutive_passes)
-        time.sleep(0.05)
+        network = players[player]
+        board_state = board.tensor.clone()
+        batch = board_state.unsqueeze(0)
+        probs = network.forward(batch)
+        move = network.get_move_as_int_from_prob_dist(probs, board_state)
+
         if move == PASS:
             consecutive_passes += 1
         else:
             consecutive_passes = 0
             board.apply_move(move, player)
+
         moves.append(move)
         rewards.append(0)
         board_states.append(board_state)
@@ -59,8 +62,8 @@ def play_game(policy):
     rewards[-1] = calculate_outcome_for_player(board, policy.color)
     trajectory = {"rewards": torch.tensor(rewards),
                   "moves": torch.tensor(moves),
-                  "board_states": torch.tensor(board_states),
-                  "move_probs": torch.tensor(policy_probs)}
+                  "board_states": torch.stack(board_states),
+                  "move_probs": torch.stack(policy_probs)}
     return trajectory
 
 

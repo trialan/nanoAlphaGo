@@ -19,10 +19,10 @@ gamma=0.99
 lambda_=0.95
 
 
-def ppo_train(policyNN, valueNN):
+def ppo_train(policyNN, valueNN, n_loops=5):
     optimizers = setup_optimizers(policyNN, valueNN)
     policy_optimizer, value_optimizer = optimizers
-    for k in range(n_trajectories):
+    for k in range(n_loops):
         trajectories = collect_trajectories(policyNN, n_trajectories)
         trajectories = compute_rewards_to_go(trajectories)
         advantages = compute_advantages(trajectories,
@@ -51,21 +51,18 @@ def compute_advantages(trajectories, valueNN):
         states = trajectory['board_states']
 
         values = value_function(states, valueNN)
-        if torch.is_tensor(values):  # Convert tensor to numpy array for consistency
-            values = values.detach().numpy()
 
         advantages = []
         gae = 0
 
-        # Compute the Generalized Advantage Estimation in reverse order for efficiency
         for t in reversed(range(len(rewards_to_go))):
             delta = rewards_to_go[t] - values[t]
-            if t < len(rewards_to_go) - 1:  # Avoid out-of-index error on last timestep
+            if t < len(rewards_to_go) - 1:
                 delta += gamma * values[t+1]
             gae = delta + gamma * lambda_ * gae
             advantages.insert(0, gae)
 
-        advantages_list.append(advantages)
+        advantages_list.append(torch.tensor(advantages))
 
     return advantages_list
 
