@@ -28,8 +28,8 @@ class ValueNN(nn.Module):
         self.fc1 = nn.Linear(128 * board_size * board_size, 256)
         self.fc_value = nn.Linear(256, 1)  # Value head
 
-    def forward(self, board):
-        x = nn.functional.relu(self.conv1(board.tensor))
+    def forward(self, board_tensors_batch):
+        x = nn.functional.relu(self.conv1(board_tensors_batch))
         x = nn.functional.relu(self.conv2(x))
         x = x.view(x.size(0), -1)
         x = nn.functional.relu(self.fc1(x))

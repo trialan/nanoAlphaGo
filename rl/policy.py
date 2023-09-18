@@ -31,7 +31,7 @@ class PolicyNN(nn.Module):
         policy_outputs = self.fc_policy(x)
 
         normalised_policy_outputs = torch.softmax(policy_outputs, 1)
-        assert_is_probs(normalised_policy_outputs)
+        assert_are_probs(normalised_policy_outputs)
 
         masks = _legal_move_mask(board_tensors_batch, self.color)
         masked_policy_outputs = normalised_policy_outputs * masks
@@ -84,8 +84,9 @@ def _legal_move_mask(board_tensors_batch, player_color):
     return torch.stack(masks)
 
 
-def assert_is_probs(x):
-    assert np.isclose(x.sum().item(), 1.0)
+def assert_are_probs(x):
+    for e in x:
+        assert np.isclose(e.sum().item(), 1.0)
 
 
 if __name__ == '__main__':
