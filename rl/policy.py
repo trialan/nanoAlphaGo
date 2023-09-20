@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.rl.masking import legal_move_mask
 from nanoAlphaGo.rl.debugging import has_nan_params, assert_no_nan_outputs
 from nanoAlphaGo.rl.utils import _index_to_move
 
@@ -23,6 +24,7 @@ class PolicyNN(nn.Module):
         outputs = self.forward_through_layers(board_tensors)
         normalised_outputs = self.normalise(outputs)
         masked_outputs = self.mask(board_tensors, normalised_outputs)
+        self.perform_sanity_checks(masked_outputs, board_tensors)
         return masked_outputs
 
     def forward_through_layers(self, board_tensors):
@@ -44,7 +46,7 @@ class PolicyNN(nn.Module):
 
     def mask(self, board_tensors, outputs):
         """ Mask illegal moves. """
-        masks = _legal_move_mask(board_tensors, self.color)
+        masks = legal_move_mask(board_tensors, self.color)
         masked_outputs = outputs * masks
         return masked_outputs
 
@@ -68,35 +70,18 @@ class PolicyNN(nn.Module):
 
 
 def assert_sum_is_less_than_or_equal_to_one(masked_policy_outputs):
-    for x in masked_policy_outputs:
-        if x.sum().item() < 1:
-            return
-        else:
-            assert np.isclose(x.sum().item(), 1.0)
+    sums = [x.sum().item() for x in masked_policy_outputs]
+    for s in sums: assert_sum_is_leq_one(s)
 
 
-def _legal_move_mask(board_tensors, player_color):
-    masks = []
-    for board_tensor in board_tensors:
-        matrix = board_tensor[0].cpu().numpy()
-        board = GoBoard(initial_state_matrix=matrix)
-        mask_size = BOARD_SIZE * BOARD_SIZE + 1
-        mask = torch.zeros(mask_size, dtype=torch.float32)
-        assert board._matrix.shape == (BOARD_SIZE, BOARD_SIZE)
-        possible_moves = board.legal_moves(player_color)
-        for move in possible_moves:
-            if move == PASS:
-                mask[-1] = 1
-            else:
-                x, y = move
-                index = x * BOARD_SIZE + y
-                mask[index] = 1
-        masks.append(mask)
-    return torch.stack(masks)
+def assert_sum_is_leq_one(s):
+    if s < 1:
+        return
+    else:
+        assert np.isclose(s, 1.0)
 
 
 def assert_are_probs(x):
-    for e in x:
-        assert np.isclose(e.sum().item(), 1.0)
+    for e in x: assert np.isclose(e.sum().item(), 1.0)
 
 

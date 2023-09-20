@@ -3,7 +3,7 @@ import torch
 
 from nanoAlphaGo.config import PASS, WHITE, BLACK, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, _legal_move_mask
+from nanoAlphaGo.rl.policy import _index_to_move, PolicyNN, legal_move_mask
 from nanoAlphaGo.rl.utils import _nn_tensor_from_matrix
 
 
@@ -32,13 +32,13 @@ def test_we_are_masking_the_right_number_of_moves():
     board = GoBoard()
     batch = board.tensor.unsqueeze(0)
     # Function expects a batch of tensors
-    masks = _legal_move_mask(batch, BLACK)
+    masks = legal_move_mask(batch, BLACK)
     assert len(masks) == 1
     assert torch.sum(masks) == BOARD_SIZE * BOARD_SIZE + 1
 
     board = _setup_a_complicated_board()
     batch = board.tensor.unsqueeze(0)
-    masks = _legal_move_mask(batch, WHITE)
+    masks = legal_move_mask(batch, WHITE)
     number_of_stones_on_board = np.count_nonzero(board._matrix)
     assert torch.sum(masks) == BOARD_SIZE * BOARD_SIZE + 1 - number_of_stones_on_board
 
