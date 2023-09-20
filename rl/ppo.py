@@ -2,11 +2,9 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from nanoAlphaGo.game.board import GoBoard
-from nanoAlphaGo.config import WHITE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.trajectories import collect_trajectories
-from nanoAlphaGo.rl.value import value_function, ValueNN
+from nanoAlphaGo.rl.value import ValueNN
 from nanoAlphaGo.rl.debugging import check_nn_gradients, check_advantages
 
 
@@ -14,8 +12,6 @@ n_trajectories = 3
 learning_rate_policy = 1e-6
 learning_rate_value = 1e-6
 epsilon = 0.2
-policy_epochs = 4
-value_epochs = 4
 gamma=0.99
 lambda_=0.95
 
@@ -26,7 +22,6 @@ def ppo_train(policyNN, valueNN, n_loops=5):
     for k in range(n_loops):
         trajectories = collect_trajectories(policyNN, n_trajectories)
         trajectories = compute_rewards_to_go(trajectories)
-
         advantages = compute_advantages(trajectories,
                                         valueNN)
         update_policy_ppoclip(policy_optimizer,
@@ -36,7 +31,6 @@ def ppo_train(policyNN, valueNN, n_loops=5):
         update_value_function_mse(value_optimizer,
                                   valueNN,
                                   trajectories)
-        print(f"Happy at: {k}")
 
 
 def compute_rewards_to_go(trajectories):
@@ -47,7 +41,6 @@ def compute_rewards_to_go(trajectories):
 
 
 def compute_advantages(trajectories, valueNN):
-    """ GAE + set final advantage to game outcome (questionable).  """
     advantages_list = []
     for trajectory in trajectories:
         rewards_to_go = trajectory['rewards_to_go']
@@ -101,15 +94,14 @@ def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages):
 
 
 def update_value_function_mse(optimizer, valueNN, trajectories):
-    for _ in range(value_epochs):
-        optimizer.zero_grad()
-        states = torch.cat([t['board_states'] for t in trajectories])
-        rewards_to_go = [t['rewards_to_go'] for t in trajectories]
-        rewards_to_go = torch.cat(rewards_to_go)
-        values = valueNN(states).squeeze()
-        loss = F.mse_loss(values, rewards_to_go)
-        loss.backward()
-        optimizer.step()
+    optimizer.zero_grad()
+    states = torch.cat([t['board_states'] for t in trajectories])
+    rewards_to_go = [t['rewards_to_go'] for t in trajectories]
+    rewards_to_go = torch.cat(rewards_to_go)
+    values = valueNN(states).squeeze()
+    loss = F.mse_loss(values, rewards_to_go)
+    loss.backward()
+    optimizer.step()
 
 
 def setup_optimizers(policyNN, valueNN):
@@ -136,6 +128,8 @@ def _mult_ratio_and_reward(ratios, advantages):
 
 
 if __name__ == '__main__':
+    from nanoAlphaGo.game.board import GoBoard
+    from nanoAlphaGo.config import WHITE
     board = GoBoard()
     ppo_train(PolicyNN(WHITE), ValueNN(board))
 

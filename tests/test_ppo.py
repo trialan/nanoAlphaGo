@@ -7,7 +7,7 @@ from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.ppo import ppo_train, compute_rewards_to_go, _mult_ratio_and_reward
 from nanoAlphaGo.rl.trajectories import collect_trajectories
-from nanoAlphaGo.rl.value import value_function, ValueNN
+from nanoAlphaGo.rl.value import ValueNN
 
 
 def test_ppo_training_runs():

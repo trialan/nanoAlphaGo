@@ -3,20 +3,6 @@ import torch.nn as nn
 
 from nanoAlphaGo.game.board import GoBoard
 
-"""
-Next step:
-    - make this batched by default (19:15, 16/09/23).
-"""
-
-def value_function(board_states, valueNN):
-    values = []
-    board = GoBoard()
-    for state in board_states:
-        board.matrix = state
-        value = valueNN.get_value(board)
-        values.append(value)
-    return values
-
 
 class ValueNN(nn.Module):
     def __init__(self, board):
