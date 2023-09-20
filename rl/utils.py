@@ -63,10 +63,10 @@ def compute_advantages(trajectories, valueNN):
 
 def check_advantages(advantages, correct_len):
     assert len(advantages) == correct_len
-    assert not torch.isnan(advantages).any(), "NaN values detected in advantages!"
+    assert not torch.isnan(advantages).any()
     max_val = advantages.max().item()
     min_val = advantages.min().item()
-    assert max_val < 1e10 and min_val > -1e10, f"Extreme values detected in advantages: Min: {min_val}, Max: {max_val}"
+    assert max_val < 1e10 and min_val > -1e10
 
 
 def _compute_rtg_single_trajectory(trajectory):

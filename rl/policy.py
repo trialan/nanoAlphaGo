@@ -2,28 +2,31 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BOARD_SIZE, PASS
+from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.rl.debugging import has_nan_params, assert_no_nan_outputs
 from nanoAlphaGo.rl.utils import _index_to_move
-from nanoAlphaGo.rl.debugging import has_nan_params
 
 
 class PolicyNN(nn.Module):
     def __init__(self, color):
         super(PolicyNN, self).__init__()
-
         self.color = color
         assert color in [1, -1]
-
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(128 * BOARD_SIZE * BOARD_SIZE, 256)
         self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)
 
-    def forward(self, board_tensors_batch):
+    def forward(self, board_tensors):
         assert not has_nan_params(self)
+        outputs = self.forward_through_layers(board_tensors)
+        normalised_outputs = self.normalise(outputs)
+        masked_outputs = self.mask(board_tensors, normalised_outputs)
+        return masked_outputs
 
-        x = self.conv1(board_tensors_batch)
+    def forward_through_layers(self, board_tensors):
+        x = self.conv1(board_tensors)
         x = nn.functional.relu(x)
         x = self.conv2(x)
         x = nn.functional.relu(x)
@@ -31,19 +34,23 @@ class PolicyNN(nn.Module):
         x = self.fc1(x)
         x = nn.functional.relu(x)
         policy_outputs = self.fc_policy(x)
+        assert_no_nan_outputs(policy_outputs)
+        return policy_outputs
 
-        check_nn_outputs(policy_outputs)
-
+    def normalise(self, policy_outputs):
         normalised_policy_outputs = torch.softmax(policy_outputs, 1)
         assert_are_probs(normalised_policy_outputs)
+        return normalised_policy_outputs
 
-        masks = _legal_move_mask(board_tensors_batch, self.color)
-        masked_policy_outputs = normalised_policy_outputs * masks
+    def mask(self, board_tensors, outputs):
+        """ Mask illegal moves. """
+        masks = _legal_move_mask(board_tensors, self.color)
+        masked_outputs = outputs * masks
+        return masked_outputs
 
-        assert_sum_is_less_than_or_equal_to_one(masked_policy_outputs)
-        self.assert_is_valid_move(masked_policy_outputs, board_tensors_batch)
-
-        return masked_policy_outputs
+    def perform_sanity_checks(self, outputs, board_tensors):
+        assert_sum_is_less_than_or_equal_to_one(outputs)
+        self.assert_is_valid_move(outputs, board_tensors)
 
     def get_move_as_int_from_prob_dist(self, prob_dist, board_tensor):
         predicted = torch.argmax(prob_dist)
@@ -52,8 +59,8 @@ class PolicyNN(nn.Module):
             return PASS
         return move_as_int
 
-    def assert_is_valid_move(self, masked_policy_outputs, board_tensors_batch):
-        for m, b in zip(masked_policy_outputs, board_tensors_batch):
+    def assert_is_valid_move(self, masked_policy_outputs, board_tensors):
+        for m, b in zip(masked_policy_outputs, board_tensors):
             move_as_int = self.get_move_as_int_from_prob_dist(m,b)
             board = GoBoard(initial_state_matrix=b[0].cpu().numpy())
             position = _index_to_move(move_as_int)
@@ -68,9 +75,9 @@ def assert_sum_is_less_than_or_equal_to_one(masked_policy_outputs):
             assert np.isclose(x.sum().item(), 1.0)
 
 
-def _legal_move_mask(board_tensors_batch, player_color):
+def _legal_move_mask(board_tensors, player_color):
     masks = []
-    for board_tensor in board_tensors_batch:
+    for board_tensor in board_tensors:
         matrix = board_tensor[0].cpu().numpy()
         board = GoBoard(initial_state_matrix=matrix)
         mask_size = BOARD_SIZE * BOARD_SIZE + 1
@@ -91,26 +98,5 @@ def _legal_move_mask(board_tensors_batch, player_color):
 def assert_are_probs(x):
     for e in x:
         assert np.isclose(e.sum().item(), 1.0)
-
-
-def check_nn_outputs(outputs):
-    max_val = outputs.max().item()
-    min_val = outputs.min().item()
-    assert max_val < 1e10 and min_val > -1e10, f"Extreme values detected in NN outputs: Min: {min_val}, Max: {max_val}"
-
-
-
-if __name__ == '__main__':
-    from nanoAlphaGo.config import WHITE, BOARD_SIZE
-    from nanoAlphaGo.rl.trajectories import collect_trajectories
-
-    board = GoBoard()
-    model = PolicyNN(color=WHITE)
-
-    trajectories = collect_trajectories(model, 3)
-
-    states = torch.cat([t['board_states'] for t in trajectories])
-
-    x = model(states)
 
 
