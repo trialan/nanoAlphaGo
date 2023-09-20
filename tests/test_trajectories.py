@@ -28,8 +28,9 @@ def test_collecting_trajectories():
 
 def test_checking_if_a_game_is_over():
     board = GoBoard()
-    consecutive_passes = 2
-    assert game_is_over(board, consecutive_passes, WHITE)
+    game_data = {"consecutive_passes" : 2,
+                 "player": WHITE}
+    assert game_is_over(board, game_data)
 
 
 def assert_all_moves_are_on_the_board(trajectories):

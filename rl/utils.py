@@ -5,6 +5,12 @@ from nanoAlphaGo.config import BOARD_SIZE, PASS, RL_params
 gamma = RL_params["gamma"]
 lambda_ = RL_params["lambda"]
 
+
+def numerically_stable_tensor_division(a, b):
+    tiny_number = 1e-10
+    return a / (b + tiny_number)
+
+
 def _nn_tensor_from_matrix(board_matrix):
     """ Conv2D wants a 4D input. """
     x = torch.tensor(board_matrix, dtype=torch.float32)
@@ -21,7 +27,7 @@ def _index_to_move(index):
         return (x, y)
 
 
-def compute_rewards_to_go(trajectories):
+def add_rewards_to_go_to_trajectories(trajectories):
     rewards_to_go_list = []
     for trajectory in trajectories:
         trajectory = _compute_rtg_single_trajectory(trajectory)
@@ -48,12 +54,19 @@ def compute_advantages(trajectories, valueNN):
 
         advantages_list.append(torch.tensor(advantages))
 
-
     num_states = sum(len(t['board_states']) for t in trajectories)
-    num_advantages = sum(len(a) for a in advantages_list)
-    assert num_advantages == num_states
+    advantages = torch.cat(advantages_list)
 
-    return advantages_list
+    check_advantages(advantages, correct_len=num_states)
+    return advantages
+
+
+def check_advantages(advantages, correct_len):
+    assert len(advantages) == correct_len
+    assert not torch.isnan(advantages).any(), "NaN values detected in advantages!"
+    max_val = advantages.max().item()
+    min_val = advantages.min().item()
+    assert max_val < 1e10 and min_val > -1e10, f"Extreme values detected in advantages: Min: {min_val}, Max: {max_val}"
 
 
 def _compute_rtg_single_trajectory(trajectory):

@@ -5,8 +5,8 @@ import torch
 from nanoAlphaGo.config import WHITE
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import PolicyNN
-from nanoAlphaGo.rl.ppo import ppo_train, _mult_ratio_and_reward
-from nanoAlphaGo.rl.utils import compute_rewards_to_go
+from nanoAlphaGo.rl.ppo import ppo_train, multiply_with_dim_correction
+from nanoAlphaGo.rl.utils import add_rewards_to_go_to_trajectories
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 
@@ -19,7 +19,7 @@ def test_ppo_training_runs():
 def test_computing_rewards_to_go():
     policy = PolicyNN(WHITE)
     trajectories = collect_trajectories(policy, n_trajectories=2)
-    trajectories = compute_rewards_to_go(trajectories)
+    add_rewards_to_go_to_trajectories(trajectories)
     assert_trajectories_have_right_dimensions(trajectories)
 
 
@@ -29,7 +29,7 @@ def test_pytorch_multiplication_in_advantages():
     ratios = torch.rand((batch_size, 1, action_space_size))
     adv = torch.rand((batch_size))
 
-    term = _mult_ratio_and_reward(ratios, adv)
+    term = multiply_with_dim_correction(ratios, adv)
 
     assert np.isclose(ratios[0][0][0] * adv[0], term[0][0][0])
     assert np.isclose(ratios[0][0][1] * adv[0], term[0][0][1])

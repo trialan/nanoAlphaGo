@@ -10,16 +10,16 @@
 
     Our RL agent will always play white for now (14/09/23), this gives it
     a slight disadvantage as black plays first (this is typically adjusted
-    by imposing a komi. """
+    by imposing a komi). """
 
 import numpy as np
 import torch
 
-from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE, PASS
-from nanoAlphaGo.rl.policy import PolicyNN
-from nanoAlphaGo.graphics.rendering import display_board
+from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
+from nanoAlphaGo.graphics.rendering import display_board
+from nanoAlphaGo.rl.policy import PolicyNN
 
 
 def collect_trajectories(policyNN, n_trajectories):
@@ -30,47 +30,90 @@ def collect_trajectories(policyNN, n_trajectories):
 def play_game(policy):
     board = GoBoard()
     adversary = PolicyNN(BLACK)
-    players = {WHITE: policy,
-               BLACK: adversary}
+    game_data = initialise_game_data()
 
-    moves = []
-    rewards = []
-    board_states = []
-    policy_probs = []
-    consecutive_passes = 0
+    while not game_is_over(board, game_data):
+        play_turn(board, policy, adversary, game_data)
+        switch_player(game_data)
 
-    player = BLACK
-    while not game_is_over(board, consecutive_passes, player):
-        network = players[player]
-        board_state = board.tensor.clone()
-        batch = board_state.unsqueeze(0)
-        probs = network.forward(batch)
-        move = network.get_move_as_int_from_prob_dist(probs, board_state)
-
-        if move == PASS:
-            consecutive_passes += 1
-        else:
-            consecutive_passes = 0
-            board.apply_move(move, player)
-
-        moves.append(move)
-        rewards.append(0)
-        board_states.append(board_state)
-        policy_probs.append(probs)
-        player = -player
-
-    rewards[-1] = calculate_outcome_for_player(board, policy.color)
-    trajectory = {"rewards": torch.tensor(rewards),
-                  "moves": torch.tensor(moves),
-                  "board_states": torch.stack(board_states),
-                  "move_probs": torch.stack(policy_probs)}
+    game_outcome = calculate_outcome_for_player(board, policy.color)
+    trajectory = build_trajectory(game_data, game_outcome)
     return trajectory
 
 
-def game_is_over(board, consecutive_passes, turn):
-    players_both_passed = consecutive_passes > 1
-    no_legal_moves = len(board.legal_moves(turn)) == 0
+def initialise_game_data():
+    game_data = {
+        'moves': [],
+        'rewards': [],
+        'board_states': [],
+        'policy_probs': [],
+        'consecutive_passes': 0,
+        'player': BLACK,
+    }
+    return game_data
+
+
+def game_is_over(board, game_data):
+    players_both_passed = game_data["consecutive_passes"] > 1
+    no_legal_moves = len(board.legal_moves(game_data["player"])) == 0
     return players_both_passed or no_legal_moves
+
+
+def play_turn(board, policy, adversary, game_data):
+    player = game_data["player"]
+    network = get_player_network(policy, adversary, player)
+    move, board_state, probs = compute_move(network, board)
+    update_consecutive_passes(move, game_data)
+    if move != PASS:
+        board.apply_move(move, player)
+    game_data = update_game_data(game_data, move, board_state, probs)
+    return move, board_state, probs
+
+
+def switch_player(game_data):
+    game_data["player"] = -game_data["player"]
+
+
+def build_trajectory(game_data, game_outcome):
+    game_data["rewards"][-1] = game_outcome
+    trajectory = {"rewards": torch.tensor(game_data["rewards"]),
+                  "moves": torch.tensor(game_data["moves"]),
+                  "board_states": torch.stack(game_data["board_states"]),
+                  "move_probs": torch.stack(game_data["policy_probs"])}
+    return trajectory
+
+
+def update_game_data(game_data, move, board_state, probs):
+    game_data["moves"].append(move)
+    game_data["rewards"].append(0)
+    game_data["board_states"].append(board_state)
+    game_data["policy_probs"].append(probs)
+    return game_data
+
+
+def get_player_network(policy, adversary, player):
+    players = {WHITE: policy, BLACK: adversary}
+    return players[player]
+
+
+def compute_move(network, board):
+    board_state = board.tensor.clone()
+    batch = board_state.unsqueeze(0)
+    probs = network.forward(batch)
+    move = network.get_move_as_int_from_prob_dist(probs, board_state)
+    return move, board_state, probs
+
+
+def update_consecutive_passes(move, game_data):
+    if move == PASS:
+        game_data["consecutive_passes"] += 1
+    else:
+        game_data["consecutive_passes"] = 0
+
+
+def apply_move(move, player, board, consecutive_passes):
+    board.apply_move(move, player)
+    return consecutive_passes
 
 
 if __name__ == '__main__':

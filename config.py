@@ -16,5 +16,5 @@ RL_params = {
             "learning_rate_value": 1e-6,
             "epsilon": 0.2,
             "gamma": 0.99,
-            "lambda":0.95,
+            "lambda": 0.95,
             }
