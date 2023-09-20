@@ -2,18 +2,18 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
+from nanoAlphaGo.config import RL_params
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 from nanoAlphaGo.rl.debugging import check_nn_gradients, check_advantages
+from nanoAlphaGo.rl.utils import compute_rewards_to_go, compute_advantages
 
 
-n_trajectories = 3
-learning_rate_policy = 1e-6
-learning_rate_value = 1e-6
-epsilon = 0.2
-gamma=0.99
-lambda_=0.95
+n_trajectories = RL_params["n_trajectories"]
+learning_rate_policy = RL_params["learning_rate_policy"]
+learning_rate_value = RL_params["learning_rate_value"]
+epsilon = RL_params["epsilon"]
 
 
 def ppo_train(policyNN, valueNN, n_loops=5):
@@ -31,41 +31,6 @@ def ppo_train(policyNN, valueNN, n_loops=5):
         update_value_function_mse(value_optimizer,
                                   valueNN,
                                   trajectories)
-
-
-def compute_rewards_to_go(trajectories):
-    rewards_to_go_list = []
-    for trajectory in trajectories:
-        trajectory = _compute_rtg_single_trajectory(trajectory)
-    return trajectories
-
-
-def compute_advantages(trajectories, valueNN):
-    advantages_list = []
-    for trajectory in trajectories:
-        rewards_to_go = trajectory['rewards_to_go']
-        states = trajectory['board_states']
-
-        values = valueNN(states)
-
-        advantages = []
-        gae = 0
-
-        for t in reversed(range(len(rewards_to_go))):
-            delta = rewards_to_go[t] - values[t]
-            if t < len(rewards_to_go) - 1:
-                delta += gamma * values[t+1]
-            gae = delta + gamma * lambda_ * gae
-            advantages.insert(0, gae)
-
-        advantages_list.append(torch.tensor(advantages))
-
-
-    num_states = sum(len(t['board_states']) for t in trajectories)
-    num_advantages = sum(len(a) for a in advantages_list)
-    assert num_advantages == num_states
-
-    return advantages_list
 
 
 def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages):
@@ -110,15 +75,6 @@ def setup_optimizers(policyNN, valueNN):
     value_optimizer = optim.Adam(valueNN.parameters(),
                                  lr=learning_rate_value)
     return policy_optimizer, value_optimizer
-
-
-def _compute_rtg_single_trajectory(trajectory):
-    outcome = trajectory['rewards'][-1]
-    n_zeros = len(trajectory['board_states']) - 1
-    rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
-    trajectory['rewards_to_go'] = torch.tensor(rewards_to_go,
-                                               dtype=torch.float32)
-    return trajectory
 
 
 def _mult_ratio_and_reward(ratios, advantages):

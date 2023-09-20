@@ -5,7 +5,8 @@ import torch
 from nanoAlphaGo.config import WHITE
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import PolicyNN
-from nanoAlphaGo.rl.ppo import ppo_train, compute_rewards_to_go, _mult_ratio_and_reward
+from nanoAlphaGo.rl.ppo import ppo_train, _mult_ratio_and_reward
+from nanoAlphaGo.rl.utils import compute_rewards_to_go
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 
