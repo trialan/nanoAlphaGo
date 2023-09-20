@@ -5,6 +5,7 @@ import torch.nn as nn
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.rl.utils import _index_to_move
+from nanoAlphaGo.rl.debugging import has_nan_params
 
 
 class PolicyNN(nn.Module):
@@ -20,6 +21,8 @@ class PolicyNN(nn.Module):
         self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)
 
     def forward(self, board_tensors_batch):
+        assert not has_nan_params(self)
+
         x = self.conv1(board_tensors_batch)
         x = nn.functional.relu(x)
         x = self.conv2(x)
@@ -27,8 +30,9 @@ class PolicyNN(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
         x = nn.functional.relu(x)
-
         policy_outputs = self.fc_policy(x)
+
+        check_nn_outputs(policy_outputs)
 
         normalised_policy_outputs = torch.softmax(policy_outputs, 1)
         assert_are_probs(normalised_policy_outputs)
@@ -89,13 +93,24 @@ def assert_are_probs(x):
         assert np.isclose(e.sum().item(), 1.0)
 
 
+def check_nn_outputs(outputs):
+    max_val = outputs.max().item()
+    min_val = outputs.min().item()
+    assert max_val < 1e10 and min_val > -1e10, f"Extreme values detected in NN outputs: Min: {min_val}, Max: {max_val}"
+
+
+
 if __name__ == '__main__':
     from nanoAlphaGo.config import WHITE, BOARD_SIZE
+    from nanoAlphaGo.rl.trajectories import collect_trajectories
+
     board = GoBoard()
     model = PolicyNN(color=WHITE)
 
-    prob_dist = model.forward(board.tensor)
-    move = model.get_move_from_prob_dist(prob_dist)
-    print("Predicted move:", move)
+    trajectories = collect_trajectories(model, 3)
+
+    states = torch.cat([t['board_states'] for t in trajectories])
+
+    x = model(states)
 
 

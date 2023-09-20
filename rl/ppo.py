@@ -7,11 +7,12 @@ from nanoAlphaGo.config import WHITE
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import value_function, ValueNN
+from nanoAlphaGo.rl.debugging import check_nn_gradients, check_advantages
 
 
 n_trajectories = 3
-learning_rate_policy = 0.001
-learning_rate_value = 0.001
+learning_rate_policy = 1e-6
+learning_rate_value = 1e-6
 epsilon = 0.2
 policy_epochs = 4
 value_epochs = 4
@@ -34,8 +35,8 @@ def ppo_train(policyNN, valueNN, n_loops=5):
                               advantages)
         update_value_function_mse(value_optimizer,
                                   valueNN,
-                                  trajectories,
-                                  rewards_to_go)
+                                  trajectories)
+        print(f"Happy at: {k}")
 
 
 def compute_rewards_to_go(trajectories):
@@ -74,32 +75,36 @@ def compute_advantages(trajectories, valueNN):
     return advantages_list
 
 
-
 def update_policy_ppoclip(optimizer, policyNN, trajectories, advantages):
     assert len(trajectories) == len(advantages)
-    for i in range(policy_epochs):
-        optimizer.zero_grad()
-        states, actions, old_probs = zip(*[(t['board_states'], t['moves'], t['move_probs']) for t in trajectories])
-        states = torch.cat(states)
-        actions = torch.cat(actions)
-        old_probs = torch.cat(old_probs)
-        advantages = torch.cat(advantages)
-        print(f"Happy: {i}")
-        assert len(advantages) == len(old_probs)
-        new_probs = policyNN(states).unsqueeze(1)
-        ratio = new_probs / old_probs
-        clip_ratio = torch.clamp(ratio, 1-epsilon, 1+epsilon)
-        clip_adv = _mult_ratio_and_reward(clip_ratio, advantages)
-        ratio_times_adv = _mult_ratio_and_reward(ratio, advantages)
-        loss = -torch.min(ratio_times_adv, clip_adv).mean()
-        loss.backward()
-        optimizer.step()
+
+    states, actions, old_probs = zip(*[(t['board_states'], t['moves'], t['move_probs']) for t in trajectories])
+    states = torch.cat(states)
+    actions = torch.cat(actions)
+    old_probs = torch.cat(old_probs)
+
+    advantages = torch.cat(advantages)
+    check_advantages(advantages, correct_len=len(old_probs))
 
 
-def update_value_function_mse(optimizer, valueNN, trajectories, rewards_to_go):
+    optimizer.zero_grad()
+    new_probs = policyNN(states).unsqueeze(1)
+    epsilon_2 = 1e-10
+    ratio = new_probs / (old_probs + epsilon_2)
+    clip_ratio = torch.clamp(ratio, 1-epsilon, 1+epsilon)
+    clip_adv = _mult_ratio_and_reward(clip_ratio, advantages)
+    ratio_times_adv = _mult_ratio_and_reward(ratio, advantages)
+    loss = -torch.min(ratio_times_adv, clip_adv).mean()
+    loss.backward()
+    check_nn_gradients(policyNN)
+    optimizer.step()
+
+
+def update_value_function_mse(optimizer, valueNN, trajectories):
     for _ in range(value_epochs):
         optimizer.zero_grad()
-        states = torch.cat([t['states'] for t in trajectories])
+        states = torch.cat([t['board_states'] for t in trajectories])
+        rewards_to_go = [t['rewards_to_go'] for t in trajectories]
         rewards_to_go = torch.cat(rewards_to_go)
         values = valueNN(states).squeeze()
         loss = F.mse_loss(values, rewards_to_go)
@@ -119,7 +124,8 @@ def _compute_rtg_single_trajectory(trajectory):
     outcome = trajectory['rewards'][-1]
     n_zeros = len(trajectory['board_states']) - 1
     rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
-    trajectory['rewards_to_go'] = rewards_to_go
+    trajectory['rewards_to_go'] = torch.tensor(rewards_to_go,
+                                               dtype=torch.float32)
     return trajectory
 
 
