@@ -12,6 +12,8 @@
     a slight disadvantage as black plays first (this is typically adjusted
     by imposing a komi). """
 
+
+from multiprocessing import Pool, cpu_count
 import numpy as np
 import torch
 
@@ -20,6 +22,8 @@ from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
+
+from concurrent.futures import ThreadPoolExecutor
 
 
 def collect_trajectories(policyNN, n_trajectories):
@@ -117,7 +121,12 @@ def apply_move(move, player, board, consecutive_passes):
 
 
 if __name__ == '__main__':
+    import time
     policy = PolicyNN(color=WHITE)
-    t = play_game(policy)
+    t = time.time()
+    trajectories = collect_trajectories(policy, 100)
+    t_end = time.time()
+
+    print(t_end - t)
 
 

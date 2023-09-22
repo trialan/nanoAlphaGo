@@ -7,8 +7,7 @@ BOARD_SIZE = 9
 
 PASS = BOARD_SIZE * BOARD_SIZE
 
-KOMI = 0
-
+KOMI = 0.
 
 RL_params = {
             "n_trajectories": 3,
@@ -18,3 +17,5 @@ RL_params = {
             "gamma": 0.99,
             "lambda": 0.95,
             }
+
+
