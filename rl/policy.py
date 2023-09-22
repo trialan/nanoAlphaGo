@@ -5,7 +5,7 @@ import torch.nn as nn
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.masking import legal_move_mask
-from nanoAlphaGo.rl.debugging import has_nan_params, assert_no_nan_outputs
+from nanoAlphaGo.rl.debugging import assert_no_nan_outputs
 from nanoAlphaGo.rl.utils import _index_to_move
 
 
@@ -20,7 +20,6 @@ class PolicyNN(nn.Module):
         self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)
 
     def forward(self, board_tensors):
-        assert not has_nan_params(self)
         outputs = self.forward_through_layers(board_tensors)
         normalised_outputs = self.normalise(outputs)
         masked_outputs = self.mask(board_tensors, normalised_outputs)

@@ -8,7 +8,7 @@ def play_turn(policy, board, history):
     move, _ = policy.get_policy_output(board)
     board.apply_move(move, policy.color)
     history.append(move)
-    #display_board(board)
+    display_board(board)
     return move
 
 
