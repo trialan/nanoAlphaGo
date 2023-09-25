@@ -80,10 +80,10 @@ def switch_player(game_data):
 
 def build_trajectory(game_data, game_outcome, device):
     game_data["rewards"][-1] = game_outcome
-    trajectory = {"rewards": torch.tensor(game_data["rewards"]),
-                  "moves": torch.tensor(game_data["moves"]),
-                  "board_states": torch.stack(game_data["board_states"]),
-                  "move_probs": torch.stack(game_data["policy_probs"])}
+    trajectory = {"rewards": torch.tensor(game_data["rewards"]).to(device),
+                  "moves": torch.tensor(game_data["moves"]).to(device),
+                  "board_states": torch.stack(game_data["board_states"]).to(device),
+                  "move_probs": torch.stack(game_data["policy_probs"]).to(device)}
     return trajectory
 
 
