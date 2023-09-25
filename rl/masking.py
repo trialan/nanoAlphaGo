@@ -6,8 +6,7 @@ from nanoAlphaGo.game.board import GoBoard
 
 def legal_move_mask(board_tensors, player_color):
     masks = [generate_mask(board_tensor, player_color) for board_tensor in board_tensors]
-    import pdb;pdb.set_trace() 
-    masks = torch.stack(masks)
+    masks = torch.stack(masks).to(board_tensors.device)
     return masks
 
 
