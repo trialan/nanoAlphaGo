@@ -41,7 +41,7 @@ def play_game(policy):
         switch_player(game_data)
 
     game_outcome = calculate_outcome_for_player(board, policy.color)
-    trajectory = build_trajectory(game_data, game_outcome)
+    trajectory = build_trajectory(game_data, game_outcome, policy.device)
     return trajectory
 
 
@@ -78,7 +78,7 @@ def switch_player(game_data):
     game_data["player"] = -game_data["player"]
 
 
-def build_trajectory(game_data, game_outcome):
+def build_trajectory(game_data, game_outcome, device):
     game_data["rewards"][-1] = game_outcome
     trajectory = {"rewards": torch.tensor(game_data["rewards"]),
                   "moves": torch.tensor(game_data["moves"]),
