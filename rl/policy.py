@@ -18,13 +18,20 @@ class PolicyNN(nn.Module):
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(128 * BOARD_SIZE * BOARD_SIZE, 256)
         self.fc_policy = nn.Linear(256, BOARD_SIZE * BOARD_SIZE + 1)
+        self.set_device()
 
     def forward(self, board_tensors):
+        board_tensors = board_tensors.to(self.device)
         outputs = self.forward_through_layers(board_tensors)
         normalised_outputs = self.normalise(outputs)
         masked_outputs = self.mask(board_tensors, normalised_outputs)
         self.perform_sanity_checks(masked_outputs, board_tensors)
         return masked_outputs
+
+    def set_device(self):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        for layer in [self.conv1, self.conv2, self.fc1, self.fc_policy]:
+            layer = layer.to(self.device)
 
     def forward_through_layers(self, board_tensors):
         x = self.conv1(board_tensors)
