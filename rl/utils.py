@@ -35,7 +35,7 @@ def add_rewards_to_go_to_trajectories(trajectories):
 
 
 def compute_advantages(trajectories, valueNN):
-    device = get_device_of_trajectories(trajectories)
+    device = get_device_of_trajectory(trajectories[0])
 
     advantages_list = []
     for trajectory in trajectories:
@@ -63,8 +63,8 @@ def compute_advantages(trajectories, valueNN):
     return advantages
 
 
-def get_device_of_trajectories(trajectories):
-    return trajectories[0]['board_states'][0].device
+def get_device_of_trajectory(trajectory):
+    return trajectory['board_states'][0].device
 
 
 def check_advantages(advantages, correct_len):
@@ -76,11 +76,12 @@ def check_advantages(advantages, correct_len):
 
 
 def _compute_rtg_single_trajectory(trajectory):
+    device = get_device_of_trajectory(trajectory)
     outcome = trajectory['rewards'][-1]
     n_zeros = len(trajectory['board_states']) - 1
     rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
     trajectory['rewards_to_go'] = torch.tensor(rewards_to_go,
-                                               dtype=torch.float32)
+                                               dtype=torch.float32).to(device)
     return trajectory
 
 
