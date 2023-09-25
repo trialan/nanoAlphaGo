@@ -35,6 +35,8 @@ def add_rewards_to_go_to_trajectories(trajectories):
 
 
 def compute_advantages(trajectories, valueNN):
+    device = get_device_of_trajectories(trajectories)
+
     advantages_list = []
     for trajectory in trajectories:
         rewards_to_go = trajectory['rewards_to_go']
@@ -55,10 +57,14 @@ def compute_advantages(trajectories, valueNN):
         advantages_list.append(torch.tensor(advantages))
 
     num_states = sum(len(t['board_states']) for t in trajectories)
-    advantages = torch.cat(advantages_list)
+    advantages = torch.cat(advantages_list).to(device)
 
     check_advantages(advantages, correct_len=num_states)
     return advantages
+
+
+def get_device_of_trajectories(trajectories):
+    return trajectories[0]['board_states'][0].device
 
 
 def check_advantages(advantages, correct_len):
