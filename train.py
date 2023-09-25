@@ -14,7 +14,7 @@ if __name__ == '__main__':
     value_network = ValueNN(board)
 
     for _ in range(EPOCHS):
-        ppo_train(policy_network, value_network, n_loops=2)
+        ppo_train(policy_network, value_network, n_loops=10)
         performance = performance_against_random_policy(policy_network,
                                                         n_games=2)
         print(performance)
