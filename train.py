@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for _ in range(EPOCHS):
         performance = performance_against_random_policy(policy_network,
                                                         n_games=1000)
-        ppo_train(policy_network, value_network, n_loops=100)
+        ppo_train(policy_network, value_network, n_loops=5)
         print(performance)
 
 
