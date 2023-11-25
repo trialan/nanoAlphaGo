@@ -1,0 +1,49 @@
+
+
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:11<00:00,  1.13s/it]
+Traceback (most recent call last):
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/train.py", line 22, in <module>
+    ppo_train(policy_network, value_network, n_loops=10)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/ppo.py", line 28, in ppo_train
+    advantages = compute_advantages(trajectories, value_net)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/utils.py", line 45, in compute_advantages
+    values = valueNN(states)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/value.py", line 23, in forward
+    x = nn.functional.relu(self.conv1(board_tensors_batch))
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/conv.py", line 460, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/conv.py", line 456, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: Input type (MPSFloatType) and weight type (torch.FloatTensor) should be the same
+Traceback (most recent call last):
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/train.py", line 22, in <module>
+    ppo_train(policy_network, value_network, n_loops=10)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/ppo.py", line 28, in ppo_train
+    advantages = compute_advantages(trajectories, value_net)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/utils.py", line 45, in compute_advantages
+    values = valueNN(states)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/thomasrialan/Documents/code/nanoAlphaGo/rl/value.py", line 23, in forward
+    x = nn.functional.relu(self.conv1(board_tensors_batch))
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/conv.py", line 460, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/torch/nn/modules/conv.py", line 456, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: Input type (MPSFloatType) and weight type (torch.FloatTensor) should be the same

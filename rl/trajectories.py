@@ -16,6 +16,7 @@
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from nanoAlphaGo.config import BLACK, WHITE, PASS
 from nanoAlphaGo.game.board import GoBoard
@@ -27,7 +28,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 def collect_trajectories(policyNN, n_trajectories):
-    trajectories = [play_game(policyNN) for _ in range(n_trajectories)]
+    trajectories = [play_game(policyNN) for _ in
+                    tqdm(range(n_trajectories),
+                         desc=f"Collecting {n_trajectories} trajectories")]
     return trajectories
 
 

@@ -1,0 +1,35 @@
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Current SDK version is 0.16.0
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Configure stats pid to 2012
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Loading settings from /Users/thomasrialan/.config/wandb/settings
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Loading settings from /Users/thomasrialan/Documents/code/nanoAlphaGo/wandb/settings
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'train.py', 'program_abspath': '/Users/thomasrialan/Documents/code/nanoAlphaGo/train.py', 'program': '/Users/thomasrialan/Documents/code/nanoAlphaGo/train.py'}
+2023-11-25 09:08:44,170 INFO    MainThread:2012 [wandb_init.py:_log_setup():524] Logging user logs to /Users/thomasrialan/Documents/code/nanoAlphaGo/wandb/run-20231125_090844-up8nsc81/logs/debug.log
+2023-11-25 09:08:44,171 INFO    MainThread:2012 [wandb_init.py:_log_setup():525] Logging internal logs to /Users/thomasrialan/Documents/code/nanoAlphaGo/wandb/run-20231125_090844-up8nsc81/logs/debug-internal.log
+2023-11-25 09:08:44,171 INFO    MainThread:2012 [wandb_init.py:init():564] calling init triggers
+2023-11-25 09:08:44,171 INFO    MainThread:2012 [wandb_init.py:init():571] wandb.init called with sweep_config: {}
+config: {}
+2023-11-25 09:08:44,171 INFO    MainThread:2012 [wandb_init.py:init():614] starting backend
+2023-11-25 09:08:44,171 INFO    MainThread:2012 [wandb_init.py:init():618] setting up manager
+2023-11-25 09:08:44,183 INFO    MainThread:2012 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2023-11-25 09:08:44,186 INFO    MainThread:2012 [wandb_init.py:init():624] backend started and connected
+2023-11-25 09:08:44,196 INFO    MainThread:2012 [wandb_init.py:init():716] updated telemetry
+2023-11-25 09:08:44,214 INFO    MainThread:2012 [wandb_init.py:init():749] communicating run to backend with 90.0 second timeout
+2023-11-25 09:09:24,944 WARNING MainThread:2012 [wandb_init.py:init():1188] interrupted
+Traceback (most recent call last):
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/wandb/sdk/wandb_init.py", line 1166, in init
+    run = wi.init()
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/wandb/sdk/wandb_init.py", line 752, in init
+    result = run_init_handle.wait(
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/wandb/sdk/lib/mailbox.py", line 283, in wait
+    found, abandoned = self._slot._get_and_clear(timeout=wait_timeout)
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/wandb/sdk/lib/mailbox.py", line 130, in _get_and_clear
+    if self._wait(timeout=timeout):
+  File "/Users/thomasrialan/Library/Python/3.9/lib/python/site-packages/wandb/sdk/lib/mailbox.py", line 126, in _wait
+    return self._event.wait(timeout=timeout)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/threading.py", line 574, in wait
+    signaled = self._cond.wait(timeout)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/threading.py", line 316, in wait
+    gotit = waiter.acquire(True, timeout)
+KeyboardInterrupt

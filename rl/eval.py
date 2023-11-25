@@ -1,4 +1,5 @@
 import math
+import wandb
 
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 
@@ -15,6 +16,7 @@ def performance_against_random_policy(policy, n_games):
 
     performance = {"win_rate": win_percentage,
                    "std_err": standard_error}
+    wandb.log(performance)
 
     return performance
 
@@ -25,4 +27,5 @@ def get_std_err(total_games, win_percentage):
     else:
         standard_error = 0
     return standard_error
+
 

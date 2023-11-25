@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import torch
 
 from nanoAlphaGo.config import PASS, WHITE, BLACK, BOARD_SIZE
@@ -43,16 +44,39 @@ def test_we_are_masking_the_right_number_of_moves():
     assert torch.sum(masks) == BOARD_SIZE * BOARD_SIZE + 1 - number_of_stones_on_board
 
 
+def test_that_sanity_checks_are_sane():
+    """ Policy isn't allowed to output an illegal move
+        thanks to our masking. """
+    board = _setup_a_complicated_board()
+    batch = board.tensor.unsqueeze(0)
+    policy = PolicyNN(color=1)
+    move_probs = policy.forward(batch)
+    move_probs[0][0] = 0.5
+
+    with pytest.raises(AssertionError):
+        policy.assert_is_valid_move(move_probs, batch)
+
+    move_probs[0][0] = 0.
+    move_probs[0][1] = 0.5
+
+    with pytest.raises(AssertionError):
+        policy.assert_is_valid_move(move_probs, batch)
+
+    move_probs[0][1] = 0.
+    move_probs[0][3] = 0.5
+    policy.assert_is_valid_move(move_probs, batch)
+
+
 def _setup_a_complicated_board():
     matrix = np.array([[1,1,-1,0,0,0,0,0,0],
-                            [1,0,-1,0,0,0,0,0,0],
-                            [-1,-1,0,0,0,0,0,0,0],
-                            [0,0,0,0,0,0,0,0,0],
-                            [0,0,-1,-1,0,0,-1,0,0],
-                            [0,0,-1, 1,-1,0,0,0,0],
-                            [0,-1,1,1,1,0,0,0,0],
-                            [0,1,0,0,0,0,0,0,0],
-                            [0,0,0,0,0,0,0,0,0]])
+                        [1,0,-1,0,0,0,0,0,0],
+                        [-1,-1,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0],
+                        [0,0,-1,-1,0,0,-1,0,0],
+                        [0,0,-1, 1,-1,0,0,0,0],
+                        [0,-1,1,1,1,0,0,0,0],
+                        [0,1,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0]])
     board = GoBoard(size=9, initial_state_matrix=matrix)
     return board
 

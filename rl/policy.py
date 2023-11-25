@@ -29,7 +29,7 @@ class PolicyNN(nn.Module):
         return masked_outputs
 
     def set_device(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         for layer in [self.conv1, self.conv2, self.fc1, self.fc_policy]:
             layer = layer.to(self.device)
 

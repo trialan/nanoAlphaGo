@@ -1,3 +1,4 @@
+DEVICE = "mps"
 
 WHITE = -1
 BLACK = 1
@@ -10,7 +11,7 @@ PASS = BOARD_SIZE * BOARD_SIZE
 KOMI = 0.
 
 RL_params = {
-            "n_trajectories": 3,
+            "n_trajectories": 50,
             "learning_rate_policy": 1e-6,
             "learning_rate_value": 1e-6,
             "epsilon": 0.2,

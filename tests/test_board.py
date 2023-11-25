@@ -5,17 +5,17 @@ from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
 
 
-def test_board_initialisation():
-    board = GoBoard(size=19)
-    assert_board_is_initially_empty(board)
-
-
 def test_counting_the_number_of_liberties():
     board = _setup_a_complicated_board()
     assert board.count_liberties((5,3)) == 4
-    assert board.count_liberties((1,0)) == 1
     assert board.count_liberties((6,4)) == 4
     assert board.count_liberties((4,6)) == 4 #Test group rule
+    assert board.count_liberties((1,0)) == 1
+
+
+def test_board_initialisation():
+    board = GoBoard(size=19)
+    assert_board_is_initially_empty(board)
 
 
 def test_getting_legal_moves():
@@ -88,7 +88,7 @@ def assert_first_move_options_are_correct(board):
 
 def _setup_a_simple_board():
     board = GoBoard(size=9)
-    board._matrix = np.array([[1,0,0,0,0,0,0,0,0],
+    board_matrix = np.array([[1,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -97,12 +97,18 @@ def _setup_a_simple_board():
                             [0,0,0,0,0,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
+    for x in range(board.size):
+        for y in range(board.size):
+            color = board_matrix[x, y]
+            if color != 0:
+                index = x * board.size + y
+                board.apply_move(index, color)
     return board
 
 
 def _setup_a_board_where_suicide_would_be_possible():
     board = GoBoard(size=9)
-    board._matrix = np.array([[1,1,-1,0,0,0,0,0,0],
+    board_matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -111,12 +117,18 @@ def _setup_a_board_where_suicide_would_be_possible():
                             [0,0,0,0,0,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
+    for x in range(board.size):
+        for y in range(board.size):
+            color = board_matrix[x, y]
+            if color != 0:
+                index = x * board.size + y
+                board.apply_move(index, color)
     return board
 
 
 def _setup_a_complicated_board():
     board = GoBoard(size=9)
-    board._matrix = np.array([[1,1,-1,0,0,0,0,0,0],
+    board_matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -125,6 +137,11 @@ def _setup_a_complicated_board():
                             [0,-1,1,1,1,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
+    for x in range(board.size):
+        for y in range(board.size):
+            color = board_matrix[x, y]
+            if color != 0:
+                index = x * board.size + y
+                board.apply_move(index, color)
     return board
-
 

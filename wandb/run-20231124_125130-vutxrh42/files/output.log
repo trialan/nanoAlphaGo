@@ -1,0 +1,30 @@
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  4.61it/s]
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  3.85it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  4.27it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:03<00:00,  2.58it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  4.25it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  4.99it/s]
+
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:04<00:00,  2.33it/s]
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:03<00:00,  3.28it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:02<00:00,  3.96it/s]
+
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:04<00:00,  2.12it/s]
+
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:03<00:00,  2.62it/s]
+3.862075090408325
+{'win_rate': 0.4, 'std_err': 0.04898979485566356}

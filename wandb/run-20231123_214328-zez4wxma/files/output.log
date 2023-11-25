@@ -1,0 +1,16 @@
+
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  7.15it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  7.58it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  8.18it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  5.94it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  6.67it/s]
+
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  6.78it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  5.82it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  7.21it/s]
+
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  5.68it/s]
+Collecting 5 trajectories: 100%|██████████████████| 5/5 [00:00<00:00,  6.84it/s]
+Collecting 10 trajectories: 100%|███████████████| 10/10 [00:01<00:00,  7.94it/s]
+1.268462896347046
+{'win_rate': 0.8, 'std_err': 0.039999999999999994}

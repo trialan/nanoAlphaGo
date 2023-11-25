@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import wandb
 
 from nanoAlphaGo.config import RL_params
 from nanoAlphaGo.rl.debugging import check_no_nan_gradients
@@ -20,7 +21,7 @@ epsilon = RL_params["epsilon"]
 
 def ppo_train(policy_net, value_net, n_loops):
     policy_opt, value_opt = setup_optimizers(policy_net, value_net)
-    for k in range(n_loops):
+    for _ in range(n_loops):
         trajectories = collect_trajectories(policy_net, n_trajectories)
         add_rewards_to_go_to_trajectories(trajectories)
         advantages = compute_advantages(trajectories, value_net)
@@ -31,12 +32,14 @@ def ppo_train(policy_net, value_net, n_loops):
 def update_policy(policy_net, optimizer, trajectories, advantages):
     optimizer.zero_grad()
     loss = compute_policy_loss(policy_net, trajectories, advantages)
+    wandb.log({"policy loss": loss.item()})
     perform_backprop(policy_net, optimizer, loss)
 
 
 def update_value_function(value_net, optimizer, trajectories):
     optimizer.zero_grad()
     loss = compute_value_loss(value_net, trajectories)
+    wandb.log({"value function loss": loss.item()})
     perform_backprop(value_net, optimizer, loss)
 
 
@@ -58,9 +61,9 @@ def compute_value_loss(value_net, trajectories):
 def compute_policy_loss(policy_net, trajectories, advantages):
     ratio = compute_loss_ratio(trajectories, policy_net)
     clip_ratio = torch.clamp(ratio, 1-epsilon, 1+epsilon)
-    clip_adv = multiply_with_dim_correction(clip_ratio, advantages)
+    clip_ratio_times_adv = multiply_with_dim_correction(clip_ratio, advantages)
     ratio_times_adv = multiply_with_dim_correction(ratio, advantages)
-    loss = -torch.min(ratio_times_adv, clip_adv).mean()
+    loss = -torch.min(ratio_times_adv, clip_ratio_times_adv).mean()
     return loss
 
 

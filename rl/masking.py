@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.game.board import GoBoard
@@ -20,13 +21,12 @@ def generate_mask(board_tensor, player_color):
 
 
 def _populate_mask_with_moves(mask, possible_moves):
-    for move in possible_moves:
-        if move == PASS:
-            mask[-1] = 1
-        else:
-            x, y = move
-            index = x * BOARD_SIZE + y
-            mask[index] = 1
+    moves = [move for move in possible_moves if move != PASS]
+    if moves:
+        indices = np.array([(x * BOARD_SIZE + y) for x, y in moves])
+        mask[indices] = 1
+    if PASS in possible_moves:
+        mask[-1] = 1
     return mask
 
 

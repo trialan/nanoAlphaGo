@@ -20,12 +20,8 @@ class GoBoard:
         self.previous_board = None  # To check for Ko rule
 
     def legal_moves(self, color):
-        moves = []
-        for x in range(self.size):
-            for y in range(self.size):
-                if self._matrix[x, y] == 0:
-                    if self.is_valid_move((x, y), color):
-                        moves.append((x, y))
+        empty_positions = np.column_stack(np.where(self._matrix == 0))
+        moves = [(x, y) for x, y in empty_positions if self.is_valid_move((x, y), color)]
         moves.append(PASS)
         return moves
 
