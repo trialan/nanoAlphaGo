@@ -3,8 +3,8 @@ import pytest
 import random
 import torch
 
-from nanoAlphaGo.config import WHITE, BLACK, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.config import WHITE, BLACK, BOARD_SIZE
 from nanoAlphaGo.rl.policy import PolicyNN, assert_sum_is_less_than_or_equal_to_one
 from nanoAlphaGo.rl.trajectories import collect_trajectories, game_is_over
 
@@ -18,7 +18,7 @@ def test_collecting_trajectories():
     assert set(trajectories[0].keys()) == {'rewards',
                                            'moves',
                                            'board_states',
-                                           "move_probs"}
+                                           'move_probs'}
 
     assert_all_moves_are_on_the_board(trajectories)
     assert_all_move_probs_are_probs(trajectories)
@@ -30,6 +30,10 @@ def test_checking_if_a_game_is_over():
     board = GoBoard()
     game_data = {"consecutive_passes" : 2,
                  "player": WHITE}
+    assert game_is_over(board, game_data)
+
+    board._matrix = np.ones((board.size, board.size))
+    game_data['consecutive_passes'] = 0
     assert game_is_over(board, game_data)
 
 
@@ -67,3 +71,5 @@ def _setup_a_complicated_board():
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
     return board
+
+

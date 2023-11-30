@@ -23,10 +23,10 @@ class PolicyNN(nn.Module):
     def forward(self, board_tensors):
         board_tensors = board_tensors.to(self.device)
         outputs = self.forward_through_layers(board_tensors)
-        normalised_outputs = self.normalise(outputs)
-        masked_outputs = self.mask(board_tensors, normalised_outputs)
-        self.perform_sanity_checks(masked_outputs, board_tensors)
-        return masked_outputs
+        masked_outputs = self.mask(board_tensors, outputs)
+        normalised_outputs = self.normalise(masked_outputs)
+        self.perform_sanity_checks(normalised_outputs, board_tensors)
+        return normalised_outputs
 
     def set_device(self):
         self.device = torch.device("cpu")
@@ -46,7 +46,9 @@ class PolicyNN(nn.Module):
         return policy_outputs
 
     def normalise(self, policy_outputs):
-        normalised_policy_outputs = torch.softmax(policy_outputs, 1)
+        nonzero_mask = policy_outputs != 0
+        policy_outputs[nonzero_mask] = torch.softmax(policy_outputs[nonzero_mask], dim=0)
+        normalised_policy_outputs = policy_outputs
         assert_are_probs(normalised_policy_outputs)
         return normalised_policy_outputs
 
@@ -72,7 +74,11 @@ class PolicyNN(nn.Module):
             move_as_int = self.get_move_as_int_from_prob_dist(m,b)
             board = GoBoard(initial_state_matrix=b[0].cpu().numpy())
             position = _index_to_move(move_as_int)
-            assert board.is_valid_move(position, self.color)
+            try:
+                assert board.is_valid_move(position, self.color)
+            except:
+                import pdb;pdb.set_trace() 
+
 
 
 def assert_sum_is_less_than_or_equal_to_one(masked_policy_outputs):

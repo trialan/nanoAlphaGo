@@ -13,16 +13,18 @@ def play_turn(policy, board, history):
 
 
 if __name__ == '__main__':
-    board = GoBoard(BOARD_SIZE)
-    black_policy = PolicyNN(color=BLACK)
-    white_policy = PolicyNN(color=WHITE)
+    for _ in range(5):
+        print("======NEW GAME=======")
+        board = GoBoard(BOARD_SIZE)
+        black_policy = PolicyNN(color=BLACK)
+        white_policy = PolicyNN(color=WHITE)
 
-    game_history = []
+        game_history = []
 
-    for _ in range(50):
-        move_white = play_turn(white_policy, board, game_history)
-        move_black = play_turn(black_policy, board, game_history)
-        print(move_white)
-        print(move_black)
+        for _ in range(2):
+            move_black = play_turn(black_policy, board, game_history)
+            move_white = play_turn(white_policy, board, game_history)
+            print(move_black)
+            print(move_white)
 
 

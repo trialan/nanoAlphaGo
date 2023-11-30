@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 
-from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.config import BOARD_SIZE
 
 
 class ValueNN(nn.Module):
-    def __init__(self, board):
+    def __init__(self):
         super(ValueNN, self).__init__()
-        board_size = board.size
+        board_size = BOARD_SIZE
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(128 * board_size * board_size, 256)

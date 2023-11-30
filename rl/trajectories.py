@@ -13,7 +13,6 @@
     by imposing a komi). """
 
 
-from multiprocessing import Pool, cpu_count
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -23,8 +22,6 @@ from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
-
-from concurrent.futures import ThreadPoolExecutor
 
 
 def collect_trajectories(policyNN, n_trajectories):
@@ -61,8 +58,9 @@ def initialise_game_data():
 
 
 def game_is_over(board, game_data):
+    """ Two consecutive passes, or only legal move is PASS  """
     players_both_passed = game_data["consecutive_passes"] > 1
-    no_legal_moves = len(board.legal_moves(game_data["player"])) == 0
+    no_legal_moves = board.legal_moves(game_data["player"]) == [81]
     return players_both_passed or no_legal_moves
 
 
@@ -116,20 +114,5 @@ def update_consecutive_passes(move, game_data):
         game_data["consecutive_passes"] += 1
     else:
         game_data["consecutive_passes"] = 0
-
-
-def apply_move(move, player, board, consecutive_passes):
-    board.apply_move(move, player)
-    return consecutive_passes
-
-
-if __name__ == '__main__':
-    import time
-    policy = PolicyNN(color=WHITE)
-    t = time.time()
-    trajectories = collect_trajectories(policy, 100)
-    t_end = time.time()
-
-    print(t_end - t)
 
 
