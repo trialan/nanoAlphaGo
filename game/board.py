@@ -2,6 +2,8 @@ import numpy as np
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.rl.utils import _index_to_move, _nn_tensor_from_matrix
+from nanoAlphaGo.game.scoring import NEIGHBORS, position_is_within_board
+from nanoAlphaGo.graphics.rendering import display_board
 
 """
 Bad things about this code:
@@ -55,14 +57,24 @@ class GoBoard:
             # Temporary place the stone to check for suicide rule
             self._matrix[x, y] = color
             self.tensor[0][x,y] = color
+
             if self.count_liberties(position) == 0:
-                valid = False
+                if self.neighbours_all_have_no_liberty((x,y)):
+                    valid = True #it's not suicide if you capture
+                else:
+                    valid = False
             self._matrix[x, y] = 0  # Reset the position to its original state
             self.tensor[0][x,y] = 0
 
         # TODO: Check for Ko rule
         #assert_board_is_self_consistent(self)
         return valid
+
+    def neighbours_all_have_no_liberty(self, position):
+        x,y = position
+        neighbors = [n for n in NEIGHBORS[position] if position_is_within_board(n)]
+        neighbor_libs = [self.count_liberties(n) for n in neighbors]
+        return sum(neighbor_libs) == 0
 
     def count_liberties(self, position):
         #assert_board_is_self_consistent(self)
@@ -96,7 +108,6 @@ class GoBoard:
 
     def apply_move(self, move, color):
         #assert_board_is_self_consistent(self)
-        premove_stone_count = np.count_nonzero(self._matrix)
         move = _index_to_move(move)
         assert self.is_valid_move(move, color)
 
@@ -116,7 +127,6 @@ class GoBoard:
                 if self.count_liberties((nx, ny)) == 0:
                     captured_stones = self._remove_group((nx, ny))
         self.assert_position_is_occupied(x,y)
-        postmove_stone_count = np.count_nonzero(self._matrix)
         #assert_board_is_self_consistent(self)
 
     def _remove_group(self, position):
@@ -148,12 +158,9 @@ class GoBoard:
 
 
 def assert_board_is_self_consistent(board):
-    try:
-        matrix = board._matrix
-        tensor = board.tensor
-        assert np.array_equal(matrix, tensor[0].cpu())
-    except:
-        import pdb;pdb.set_trace() 
+    matrix = board._matrix
+    tensor = board.tensor
+    assert np.array_equal(matrix, tensor[0].cpu())
 
 
 
