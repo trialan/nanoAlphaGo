@@ -18,16 +18,31 @@ import torch
 from tqdm import tqdm
 
 from nanoAlphaGo.config import BLACK, WHITE, PASS
-from nanoAlphaGo.game.board import GoBoard
+from nanoAlphaGo.game.board import GoBoard, assert_board_is_self_consistent
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
 
+import multiprocessing
+
+
+def mp_collect_trajectories(policyNN, n_trajectories):
+    state_dict = policyNN.state_dict()
+    with multiprocessing.Pool(7) as pool:
+        args = [(state_dict, _) for _ in range(n_trajectories)]
+        results = list(pool.starmap(play_game_wrapper, args))
+    return results
+
+
+def play_game_wrapper(state_dict, _):
+    policyNN = PolicyNN(WHITE)
+    policyNN.load_state_dict(state_dict)
+    policyNN.eval()
+    return play_game(policyNN)
+
 
 def collect_trajectories(policyNN, n_trajectories):
-    trajectories = [play_game(policyNN) for _ in
-                    tqdm(range(n_trajectories),
-                         desc=f"Collecting {n_trajectories} trajectories")]
+    trajectories = [play_game(policyNN) for _ in tqdm(range(n_trajectories))]
     return trajectories
 
 
@@ -60,7 +75,7 @@ def initialise_game_data():
 def game_is_over(board, game_data):
     """ Two consecutive passes, or only legal move is PASS  """
     players_both_passed = game_data["consecutive_passes"] > 1
-    no_legal_moves = board.legal_moves(game_data["player"]) == [81]
+    no_legal_moves = board.legal_moves(game_data["player"]) == []
     return players_both_passed or no_legal_moves
 
 
@@ -69,8 +84,7 @@ def play_turn(board, policy, adversary, game_data):
     network = get_player_network(policy, adversary, player)
     move, board_state, probs = compute_move(network, board)
     update_consecutive_passes(move, game_data)
-    if move != PASS:
-        board.apply_move(move, player)
+    board.apply_move(move, player)
     game_data = update_game_data(game_data, move, board_state, probs)
     return move, board_state, probs
 
@@ -103,8 +117,9 @@ def get_player_network(policy, adversary, player):
 
 def compute_move(network, board):
     board_state = board.tensor.clone()
+    assert_board_is_self_consistent(board)
     batch = board_state.unsqueeze(0)
-    probs = network.forward(batch)
+    probs = network.forward(batch).detach() #for serialization (mp)
     move = network.get_move_as_int_from_prob_dist(probs, board_state)
     return move, board_state, probs
 
