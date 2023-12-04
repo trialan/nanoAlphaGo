@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from tqdm import tqdm
 import wandb
 
 from nanoAlphaGo.config import RL_params
@@ -21,7 +22,7 @@ epsilon = RL_params["epsilon"]
 
 def ppo_train(policy_net, value_net, n_loops):
     policy_opt, value_opt = setup_optimizers(policy_net, value_net)
-    for _ in range(n_loops):
+    for _ in tqdm(range(n_loops), desc="PPO Steps"):
         trajectories = collect_trajectories(policy_net, n_trajectories)
         add_rewards_to_go_to_trajectories(trajectories)
         advantages = compute_advantages(trajectories, value_net)
@@ -32,14 +33,14 @@ def ppo_train(policy_net, value_net, n_loops):
 def update_policy(policy_net, optimizer, trajectories, advantages):
     optimizer.zero_grad()
     loss = compute_policy_loss(policy_net, trajectories, advantages)
-    #wandb.log({"policy loss": loss.item()})
+    wandb.log({"policy loss": loss.item()})
     perform_backprop(policy_net, optimizer, loss)
 
 
 def update_value_function(value_net, optimizer, trajectories):
     optimizer.zero_grad()
     loss = compute_value_loss(value_net, trajectories)
-    #wandb.log({"value function loss": loss.item()})
+    wandb.log({"value function loss": loss.item()})
     perform_backprop(value_net, optimizer, loss)
 
 
@@ -63,7 +64,7 @@ def compute_policy_loss(policy_net, trajectories, advantages):
     clip_ratio = torch.clamp(ratio, 1-epsilon, 1+epsilon)
     clip_ratio_times_adv = multiply_with_dim_correction(clip_ratio, advantages)
     ratio_times_adv = multiply_with_dim_correction(ratio, advantages)
-    loss = -torch.min(ratio_times_adv, clip_ratio_times_adv).mean()
+    loss = torch.min(ratio_times_adv, clip_ratio_times_adv).mean()
     return loss
 
 
@@ -82,15 +83,11 @@ def multiply_with_dim_correction(ratios, advantages):
 
 
 def setup_optimizers(policy, value):
-    policy_optimizer = optim.Adam(policy.parameters(), lr=lr_policy)
-    value_optimizer = optim.Adam(value.parameters(), lr=lr_value)
+    policy_optimizer = optim.Adam(policy.parameters(),
+                                  lr=lr_policy,
+                                  maximize=True)
+    value_optimizer = optim.Adam(value.parameters(),
+                                 lr=lr_value)
     return policy_optimizer, value_optimizer
-
-
-if __name__ == '__main__':
-    from nanoAlphaGo.game.board import GoBoard
-    from nanoAlphaGo.config import WHITE
-    board = GoBoard()
-    ppo_train(PolicyNN(WHITE), ValueNN(board), n_loops=3)
 
 

@@ -17,16 +17,15 @@ def generate_mask(board_tensor, player_color):
     assert board._matrix.shape == (BOARD_SIZE, BOARD_SIZE)
     mask = torch.zeros(BOARD_SIZE * BOARD_SIZE + 1, dtype=torch.float32)
     possible_moves = board.legal_moves(player_color)
-    return _populate_mask_with_moves(mask, possible_moves)
+    populated_mask = _populate_mask_with_moves(mask, possible_moves)
+    return populated_mask
 
 
 def _populate_mask_with_moves(mask, possible_moves):
-    moves = [move for move in possible_moves if move != PASS]
-    if moves:
-        indices = np.array([(x * BOARD_SIZE + y) for x, y in moves])
+    if possible_moves:
+        indices = np.array([(x * BOARD_SIZE + y) for x, y in possible_moves])
         mask[indices] = 1
-    if PASS in possible_moves:
-        mask[-1] = 1
+    mask[-1] = 1 #PASS is always legal move
     return mask
 
 

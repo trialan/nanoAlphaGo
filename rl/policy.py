@@ -46,8 +46,9 @@ class PolicyNN(nn.Module):
         return policy_outputs
 
     def normalise(self, policy_outputs):
-        nonzero_mask = policy_outputs != 0
-        policy_outputs[nonzero_mask] = torch.softmax(policy_outputs[nonzero_mask], dim=0)
+        for k in range(len(policy_outputs)):
+            nonzero_mask = policy_outputs[k] != 0
+            policy_outputs[k][nonzero_mask] = torch.softmax(policy_outputs[k][nonzero_mask], dim=0)
         normalised_policy_outputs = policy_outputs
         assert_are_probs(normalised_policy_outputs)
         return normalised_policy_outputs
@@ -65,20 +66,14 @@ class PolicyNN(nn.Module):
     def get_move_as_int_from_prob_dist(self, prob_dist, board_tensor):
         predicted = torch.argmax(prob_dist)
         move_as_int = predicted.item()
-        if move_as_int == PASS:
-            return PASS
         return move_as_int
 
-    def assert_is_valid_move(self, masked_policy_outputs, board_tensors):
-        for m, b in zip(masked_policy_outputs, board_tensors):
+    def assert_is_valid_move(self, policy_outputs, board_tensors):
+        for m, b in zip(policy_outputs, board_tensors):
             move_as_int = self.get_move_as_int_from_prob_dist(m,b)
             board = GoBoard(initial_state_matrix=b[0].cpu().numpy())
             position = _index_to_move(move_as_int)
-            try:
-                assert board.is_valid_move(position, self.color)
-            except:
-                import pdb;pdb.set_trace() 
-
+            assert board.is_valid_move(position, self.color)
 
 
 def assert_sum_is_less_than_or_equal_to_one(masked_policy_outputs):

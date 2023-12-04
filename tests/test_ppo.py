@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pytest
 import torch
@@ -11,9 +12,10 @@ from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 
 
+@pytest.mark.skip()
 def test_ppo_training_runs():
-    board = GoBoard()
-    ppo_train(PolicyNN(WHITE), ValueNN(board), n_loops=1)
+    """ Issue with WnB not running in pytest """
+    ppo_train(PolicyNN(WHITE), ValueNN(), n_loops=1)
 
 
 def test_computing_rewards_to_go():
