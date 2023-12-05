@@ -1,9 +1,36 @@
 import numpy as np
+import torch
 import pytest
 
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
 from nanoAlphaGo.game.scoring import NEIGHBORS, position_is_within_board
+from nanoAlphaGo.rl.masking import generate_mask
+
+
+def test_board_initialisation():
+    board = GoBoard(size=19)
+    assert_board_is_initially_empty(board)
+
+
+def test_getting_legal_moves():
+    board = GoBoard(size=9)
+    assert_first_move_options_are_correct(board)
+    board = _setup_a_simple_board()
+    moves_for_white = board.legal_moves(WHITE)
+    assert len(moves_for_white) == 9*9 - 3
+
+
+def test_violating_ko_rule():
+    board = GoBoard(size=2)
+
+    board.previous_boards.append(np.array([[0,1], [0,0]]))
+    board.previous_boards.append(np.array([[0,1], [1,0]]))
+    board.previous_boards.append(np.array([[1,-1], [1,0]]))
+
+    board._matrix = np.array([[0,0],[1,0]])
+    ko_violating_move = (0,1)
+    assert board.violates_ko_rule(ko_violating_move, color=1) is True
 
 
 def test_counting_the_number_of_liberties():
@@ -21,17 +48,43 @@ def test_counting_the_number_of_liberties():
     assert board.count_liberties((3,0)) == 1
 
 
-def test_board_initialisation():
-    board = GoBoard(size=19)
-    assert_board_is_initially_empty(board)
+def test_certain_boards_for_legal_moves():
+    """ These boards occurred during games that had a suspicious # of moves """
+    tensors = torch.tensor([[[ 1.,  1.,  1.,  1.,  1.,  0.,  0., -1., -1.],
+                      [ 1.,  1.,  1.,  1.,  0.,  1.,  1.,  0.,  0.],
+                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  1.,  0.],
+                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.],
+                      [ 1.,  0.,  0., -1.,  0.,  1.,  1.,  1.,  0.],
+                      [ 1., -1., -1.,  1.,  1., -1.,  1.,  1.,  1.],
+                      [ 1.,  1., -1.,  1., -1., -1.,  1.,  0.,  0.],
+                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  0.,  1.],
+                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  0.,  0.]]])
+    board = GoBoard(initial_state_matrix=tensors[0].numpy())
+    expected_legal_moves = [
+                (0,5), (0,6),
+                (1,4), (1,7), (1,8),
+                (2,1), (2,5), (2,8),
+                (4,1), (4,2), (4,4), (4,8),
+                (6,7), (6,8),
+                (7,1), (7,5), (7,7),
+                (8,7), (8,8)
+            ]
+    """ On this board these moves are illegal for white:
+    (1,4), (7,1), (7,5), (4,8), : suicide """
+    white_suicide_moves = set({64, 68, 44, 13, 19, 23})
 
+    black_legal_moves = board.legal_moves(BLACK)
+    white_legal_moves = board.legal_moves(WHITE)
+    legal_moves = set(black_legal_moves).union(set(white_legal_moves))
+    assert sorted(legal_moves) == sorted(expected_legal_moves)
 
-def test_getting_legal_moves():
-    board = GoBoard(size=9)
-    assert_first_move_options_are_correct(board)
-    board = _setup_a_simple_board()
-    moves_for_white = board.legal_moves(WHITE)
-    assert len(moves_for_white) == 9*9 - 3
+    expected_ixs = sorted([a*9+b for (a,b) in expected_legal_moves])
+    black_mask = generate_mask(tensors, BLACK).numpy()
+    nonzero_mask_ixs = sorted(list(np.nonzero(black_mask)[0]))
+    assert expected_ixs == nonzero_mask_ixs[:-1] #mask includes 'PASS' move
+    white_mask = generate_mask(tensors, WHITE).numpy()
+    nonzero_mask_ixs = sorted(list(np.nonzero(white_mask)[0]))
+    assert set(expected_ixs) - set(nonzero_mask_ixs[:-1]) == white_suicide_moves
 
 
 def test_suicide_rule_special_case():
