@@ -6,7 +6,7 @@ import torch
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import WHITE, BLACK, BOARD_SIZE
 from nanoAlphaGo.rl.policy import PolicyNN, assert_sum_is_less_than_or_equal_to_one
-from nanoAlphaGo.rl.trajectories import collect_trajectories, game_is_over
+from nanoAlphaGo.rl.trajectories import collect_trajectories, game_is_over, st_collect_trajectories
 
 
 def test_playing_single_game():
@@ -15,9 +15,11 @@ def test_playing_single_game():
     random.seed(seed)
     torch.manual_seed(seed)
     policy = PolicyNN(WHITE)
+    #multiprocessed version
     trajectories = collect_trajectories(policy, n_trajectories=1)
-
     final_reward = trajectories[0]['rewards'][-1]
+    #single threaded version (kept for debuggin purposes)
+    trajectories = st_collect_trajectories(policy, n_trajectories=1)
 
 
 def test_collecting_trajectories():

@@ -87,7 +87,8 @@ def setup_optimizers(policy, value):
                                   lr=lr_policy,
                                   maximize=True)
     value_optimizer = optim.Adam(value.parameters(),
-                                 lr=lr_value)
+                                 lr=lr_value,
+                                 maximize=False)
     return policy_optimizer, value_optimizer
 
 

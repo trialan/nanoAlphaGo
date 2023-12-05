@@ -1,9 +1,11 @@
-import os
 import numpy as np
+import os
 import pytest
+import subprocess
 import torch
+import wandb
 
-from nanoAlphaGo.config import WHITE
+from nanoAlphaGo.config import WHITE, RL_params
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.ppo import ppo_train, multiply_with_dim_correction
@@ -12,10 +14,11 @@ from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 
 
-@pytest.mark.skip()
 def test_ppo_training_runs():
-    """ Issue with WnB not running in pytest """
+    change_wandb_mode_for_testing("disabled")
+    RL_params["n_trajectories"] = 2
     ppo_train(PolicyNN(WHITE), ValueNN(), n_loops=1)
+    change_wandb_mode_for_testing("enabled")
 
 
 def test_computing_rewards_to_go():
@@ -47,5 +50,12 @@ def assert_trajectories_have_right_dimensions(trajectories):
     for t in trajectories:
         lengths = set(len(t[k]) for k in keys)
         assert len(lengths) == 1
+
+
+def change_wandb_mode_for_testing(mode):
+    assert mode in ["enabled", "disabled"]
+    subprocess.run(["wandb", mode])
+    if mode == "disabled":
+        wandb.init()
 
 

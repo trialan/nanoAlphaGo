@@ -173,4 +173,3 @@ def assert_board_is_self_consistent(board):
     assert np.array_equal(matrix, tensor[0].cpu())
 
 
-
