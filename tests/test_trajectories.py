@@ -40,13 +40,23 @@ def test_collecting_trajectories():
 def test_checking_if_a_game_is_over():
     board = GoBoard()
     game_data = {"consecutive_passes" : 2,
-                 "player": WHITE}
+                 "player": WHITE,
+                 "turn": 5,
+                 "moves": [1,2,3,4,5]}
     assert game_is_over(board, game_data)
 
     board._matrix = np.ones((board.size, board.size))
     game_data['consecutive_passes'] = 0
     assert game_is_over(board, game_data)
 
+    board = GoBoard()
+    game_data = {"consecutive_passes" : 0,
+                 "player": WHITE,
+                 "turn": 105,
+                 "moves": [1,2,3]}
+    assert game_is_over(board, game_data)
+    game_data['turn'] = 65
+    assert not game_is_over(board, game_data)
 
 def assert_all_moves_are_on_the_board(trajectories):
     for t in trajectories:
