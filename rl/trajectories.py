@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from nanoAlphaGo.config import BLACK, WHITE, PASS
+from nanoAlphaGo.config import BLACK, WHITE, PASS, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard, assert_board_is_self_consistent
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
@@ -68,15 +68,26 @@ def initialise_game_data():
         'policy_probs': [],
         'consecutive_passes': 0,
         'player': BLACK,
+        'turn': 0,
     }
     return game_data
 
 
 def game_is_over(board, game_data):
-    """ Two consecutive passes, or only legal move is PASS  """
+    """ Two consecutive passes, or only legal move is PASS, or too many turns. """
     players_both_passed = game_data["consecutive_passes"] > 1
     no_legal_moves = board.legal_moves(game_data["player"]) == []
-    return players_both_passed or no_legal_moves
+    game_too_long = too_many_turns(game_data)
+    return players_both_passed or no_legal_moves or game_too_long
+
+
+def too_many_turns(game_data):
+    """ 101 was chosen as turn limit because 9x9 = 81. I round up for PASS
+        move, but realistically the agent should rarely pass, and it would
+        seem odd for there to be over 20 passes in a game. """
+    threshold = BOARD_SIZE * BOARD_SIZE + 20
+    too_many_turns = game_data["turn"] - game_data["moves"].count(PASS) > threshold
+    return too_many_turns
 
 
 def play_turn(board, policy, adversary, game_data):
@@ -107,6 +118,7 @@ def update_game_data(game_data, move, board_state, probs):
     game_data["rewards"].append(0)
     game_data["board_states"].append(board_state)
     game_data["policy_probs"].append(probs)
+    game_data["turn"] += 1
     return game_data
 
 
