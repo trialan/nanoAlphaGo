@@ -26,7 +26,7 @@ from nanoAlphaGo.rl.policy import PolicyNN
 import multiprocessing
 
 
-def mp_collect_trajectories(policyNN, n_trajectories):
+def collect_trajectories(policyNN, n_trajectories):
     state_dict = policyNN.state_dict()
     with multiprocessing.Pool(7) as pool:
         args = [(state_dict, _) for _ in range(n_trajectories)]
@@ -41,7 +41,7 @@ def play_game_wrapper(state_dict, _):
     return play_game(policyNN)
 
 
-def collect_trajectories(policyNN, n_trajectories):
+def st_collect_trajectories(policyNN, n_trajectories):
     trajectories = [play_game(policyNN) for _ in tqdm(range(n_trajectories))]
     return trajectories
 
