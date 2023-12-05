@@ -13,9 +13,11 @@
     by imposing a komi). """
 
 
+from tqdm import tqdm
+import multiprocessing
 import numpy as np
 import torch
-from tqdm import tqdm
+import wandb
 
 from nanoAlphaGo.config import BLACK, WHITE, PASS, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard, assert_board_is_self_consistent
@@ -23,27 +25,25 @@ from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
 
-import multiprocessing
-
 
 def collect_trajectories(policyNN, n_trajectories):
     state_dict = policyNN.state_dict()
     with multiprocessing.Pool(7) as pool:
         args = [(state_dict, _) for _ in range(n_trajectories)]
-        results = list(pool.starmap(play_game_wrapper, args))
-    return results
-
-
-def play_game_wrapper(state_dict, _):
-    policyNN = PolicyNN(WHITE)
-    policyNN.load_state_dict(state_dict)
-    policyNN.eval()
-    return play_game(policyNN)
+        trajectories = list(pool.starmap(play_game_wrapper, args))
+    wandb.log({"Mean score": get_mean_score(trajectories)})
+    return trajectories
 
 
 def st_collect_trajectories(policyNN, n_trajectories):
     trajectories = [play_game(policyNN) for _ in tqdm(range(n_trajectories))]
+    wandb.log({"Mean score": get_mean_score(trajectories)})
     return trajectories
+
+
+def get_mean_score(trajectories):
+    scores = [t['rewards'][-1] for t in trajectories]
+    return np.mean(scores)
 
 
 def play_game(policy):
@@ -58,6 +58,13 @@ def play_game(policy):
     game_outcome = calculate_outcome_for_player(board, policy.color)
     trajectory = build_trajectory(game_data, game_outcome, policy.device)
     return trajectory
+
+
+def play_game_wrapper(state_dict, _):
+    policyNN = PolicyNN(WHITE)
+    policyNN.load_state_dict(state_dict)
+    policyNN.eval()
+    return play_game(policyNN)
 
 
 def initialise_game_data():

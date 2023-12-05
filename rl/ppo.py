@@ -14,7 +14,7 @@ from nanoAlphaGo.rl.utils import (add_rewards_to_go_to_trajectories,
 from nanoAlphaGo.rl.value import ValueNN
 
 
-n_trajectories = RL_params["n_trajectories"]
+n_trajectories = RL_params["n_trajectories_per_step"]
 lr_policy = RL_params["learning_rate_policy"]
 lr_value = RL_params["learning_rate_value"]
 epsilon = RL_params["epsilon"]
