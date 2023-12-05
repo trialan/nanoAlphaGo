@@ -34,8 +34,8 @@ class GoBoardWindow(arcade.Window):
                 elif self.board_array[i, j] == -1:
                     arcade.draw_circle_filled(x, y, self.cell_size // 2 - 2, WHITE)
 
-def display_board(board):
-    board_array = board._matrix
+def display_board(board_matrix):
+    board_array = board_matrix
     window = GoBoardWindow(board_array)
     arcade.run()
 

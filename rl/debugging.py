@@ -1,13 +1,6 @@
 import torch
 
 
-def has_nan_params(model):
-    for param in model.parameters():
-        if torch.isnan(param).any():
-            return True
-    return False
-
-
 def check_no_nan_gradients(network):
     """Check the gradients for NaN or extreme values."""
     for name, param in network.named_parameters():
