@@ -1,16 +1,35 @@
 import numpy as np
 import torch
 import pytest
+import pickle
 
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import BLACK, WHITE
 from nanoAlphaGo.game.scoring import NEIGHBORS, position_is_within_board
 from nanoAlphaGo.rl.masking import generate_mask
+from nanoAlphaGo.graphics.rendering import display_board
 
 
 def test_board_initialisation():
     board = GoBoard(size=19)
     assert_board_is_initially_empty(board)
+
+
+def test_we_dont_allow_illegal_moves():
+    _check_the_no_suicide_rule()
+    _check_that_intersections_must_be_empty()
+    _check_that_position_must_be_on_board()
+
+
+def test_making_a_move_on_the_board():
+    board = _setup_a_simple_board()
+    board.apply_move(30, BLACK)
+    assert board._matrix[3,3] == BLACK
+    assert_that_tensor_is_same_board_as_matrix(board)
+
+    with pytest.raises(AssertionError):
+        """ Can't make illegal moves. """
+        board.apply_move(30, WHITE)
 
 
 def test_getting_legal_moves():
@@ -48,45 +67,6 @@ def test_counting_the_number_of_liberties():
     assert board.count_liberties((3,0)) == 1
 
 
-def test_certain_boards_for_legal_moves():
-    """ These boards occurred during games that had a suspicious # of moves """
-    tensors = torch.tensor([[[ 1.,  1.,  1.,  1.,  1.,  0.,  0., -1., -1.],
-                      [ 1.,  1.,  1.,  1.,  0.,  1.,  1.,  0.,  0.],
-                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  1.,  0.],
-                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.],
-                      [ 1.,  0.,  0., -1.,  0.,  1.,  1.,  1.,  0.],
-                      [ 1., -1., -1.,  1.,  1., -1.,  1.,  1.,  1.],
-                      [ 1.,  1., -1.,  1., -1., -1.,  1.,  0.,  0.],
-                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  0.,  1.],
-                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  0.,  0.]]])
-    board = GoBoard(initial_state_matrix=tensors[0].numpy())
-    expected_legal_moves = [
-                (0,5), (0,6),
-                (1,4), (1,7), (1,8),
-                (2,1), (2,5), (2,8),
-                (4,1), (4,2), (4,4), (4,8),
-                (6,7), (6,8),
-                (7,1), (7,5), (7,7),
-                (8,7), (8,8)
-            ]
-    """ On this board these moves are illegal for white:
-    (1,4), (7,1), (7,5), (4,8), : suicide """
-    white_suicide_moves = set({64, 68, 44, 13, 19, 23})
-
-    black_legal_moves = board.legal_moves(BLACK)
-    white_legal_moves = board.legal_moves(WHITE)
-    legal_moves = set(black_legal_moves).union(set(white_legal_moves))
-    assert sorted(legal_moves) == sorted(expected_legal_moves)
-
-    expected_ixs = sorted([a*9+b for (a,b) in expected_legal_moves])
-    black_mask = generate_mask(tensors, BLACK).numpy()
-    nonzero_mask_ixs = sorted(list(np.nonzero(black_mask)[0]))
-    assert expected_ixs == nonzero_mask_ixs[:-1] #mask includes 'PASS' move
-    white_mask = generate_mask(tensors, WHITE).numpy()
-    nonzero_mask_ixs = sorted(list(np.nonzero(white_mask)[0]))
-    assert set(expected_ixs) - set(nonzero_mask_ixs[:-1]) == white_suicide_moves
-
-
 def test_suicide_rule_special_case():
     """ If a group is surrounded but has one 'eye' it is legal for the
         surrounding player to place his stone inside the eye and thus
@@ -102,21 +82,153 @@ def test_suicide_rule_special_case():
     assert (3,3) in legal_moves
 
 
-def test_we_dont_allow_illegal_moves():
-    _check_the_no_suicide_rule()
-    _check_that_intersections_must_be_empty()
-    _check_that_position_must_be_on_board()
+def test_a_suspicious_game_for_capturing_errors():
+    with open("tests/game_400_moves.pickle", "rb") as f:
+        game_data = pickle.load(f)
+
+    def count_stones(state):
+        return np.count_nonzero(state[0].numpy())
+
+    def find_capture_ixs(stones_on_board):
+        drops = np.array(stones_on_board)[:-1] > np.array(stones_on_board)[1:]
+        return np.where(drops)[0]
+
+    stones_on_board = [count_stones(s) for s in game_data['board_states']]
+    capture_ixs = find_capture_ixs(stones_on_board)
+
+    """ At step 61 White plays (0,5) and captures 3 black stones by
+    placing a single white stone --> stone count drops by two"""
+    assert stones_on_board[61] - stones_on_board[62] == 2
+
+    """ At step 417 White plays (2,7) and captures 13 black stones by
+    placing a single white stone --> stone count drops by 12"""
+    assert stones_on_board[417] - stones_on_board[418] == 12
+
+    """ At step 358 White plays (1,7) and captures 2 white stones by
+    placing a single black stone --> stone count drops by onw"""
+    assert stones_on_board[358] - stones_on_board[359] == 1
 
 
-def test_making_a_move_on_the_board():
-    board = _setup_a_simple_board()
-    board.apply_move(30, BLACK)
-    assert board._matrix[3,3] == BLACK
-    assert_that_tensor_is_same_board_as_matrix(board)
+def test_a_suspicious_game_for_legal_move_errors():
+    """ This game had 400 non-PASS moves, for this test we pick a few board
+    states at random and check that our masking and legal move calculations
+    are correct.
 
-    with pytest.raises(AssertionError):
-        """ Can't make illegal moves. """
-        board.apply_move(30, WHITE)
+    With this test passing, it seems very likely that there is no issue
+    with either masking or computing legal moves.
+    """
+
+    with open("tests/game_400_moves.pickle", "rb") as f:
+        game_data = pickle.load(f)
+
+    tensor_1 = game_data['board_states'][35]
+    tensor_2 = game_data['board_states'][170]
+
+    expected_black_legal_moves_t2 = [
+            (0,1), (0,2), (0,4), (0,5),
+            (2,2),
+            (4,7),
+            (6,6), (6,8),
+            (7,5),
+            (8,4),(8,6),(8,8)
+            ]
+    expected_white_legal_moves_t2 = [
+            (0,1), (0,2), (0,4), (0,5),
+            (2,2),
+            (3,8),
+            (4,4),(4,7),
+            (7,5),
+            (8,1), (8,4)
+            ]
+
+    assert_masking_and_move_calculation_correct(tensor_2, expected_white_legal_moves_t2, expected_black_legal_moves_t2)
+
+    expected_black_legal_moves_t1 = [
+            (0,0), (0,1), (0,2), (0,4), (0,5),
+            (1,2), (1,3), (1,4),
+            (2,2), (2,5), (2,6), (2,8),
+            (3,0), (3,1), (3,2), (3,3), (3,4), (3,5), (3,6), (3,8),
+            (4,3), (4,4), (4,5), (4,6), (4,7),
+            (5,0), (5,1), (5,3), (5,4), (5,7), (5,8),
+            (6,0), (6,1), (6,2), (6,5), (6,6),
+            (7,4), (7,5), (7,6), (7,8),
+            (8,3), (8,4), (8,6), (8,7), (8,8),
+            ]
+    expected_white_legal_moves_t1 = [
+            (0,0), (0,1), (0,2), (0,4), (0,5),(0,7),
+            (1,2), (1,3), (1,4),
+            (2,2), (2,5), (2,6), (2,8),
+            (3,0), (3,1), (3,2), (3,3), (3,4), (3,5), (3,6), (3,8),
+            (4,3), (4,4), (4,5), (4,6), (4,7),
+            (5,0), (5,1), (5,3), (5,4), (5,7), (5,8),
+            (6,0), (6,1), (6,2), (6,5), (6,6),
+            (7,4), (7,5), (7,6), (7,8),
+            (8,3), (8,4), (8,6), (8,7), (8,8),
+            ]
+    assert_masking_and_move_calculation_correct(tensor_1, expected_white_legal_moves_t1, expected_black_legal_moves_t1)
+
+
+def test_certain_boards_for_legal_moves():
+    """ This board occurred during games that had a suspicious # of moves """
+    tensors = torch.tensor([[[ 1.,  1.,  1.,  1.,  1.,  0.,  0., -1., -1.],
+                      [ 1.,  1.,  1.,  1.,  0.,  1.,  1.,  0.,  0.],
+                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  1.,  0.],
+                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.],
+                      [ 1.,  0.,  0., -1.,  0.,  1.,  1.,  1.,  0.],
+                      [ 1., -1., -1.,  1.,  1., -1.,  1.,  1.,  1.],
+                      [ 1.,  1., -1.,  1., -1., -1.,  1.,  0.,  0.],
+                      [ 1.,  0.,  1.,  1.,  1.,  0.,  1.,  0.,  1.],
+                      [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  0.,  0.]]])
+    expected_black_legal_moves = [
+                (0,5), (0,6),
+                (1,4), (1,7), (1,8),
+                (2,1), (2,5), (2,8),
+                (4,1), (4,2), (4,4), (4,8),
+                (6,7), (6,8),
+                (7,1), (7,5), (7,7),
+                (8,7), (8,8)
+            ]
+    expected_white_legal_moves = [
+                (0,5), (0,6),
+                (1,7), (1,8),
+                (2,8),
+                (4,1), (4,2), (4,4),
+                (6,7), (6,8),
+                (7,7),
+                (8,7), (8,8)
+            ]
+    assert_masking_and_move_calculation_correct(
+            tensors,
+            expected_white_legal_moves,
+            expected_black_legal_moves,
+            )
+
+
+def assert_masking_and_move_calculation_correct(tensors,
+                expected_white_legal_moves, expected_black_legal_moves):
+    board = GoBoard(initial_state_matrix=tensors[0].numpy())
+    black_legal_moves = board.legal_moves(BLACK)
+    white_legal_moves = board.legal_moves(WHITE)
+
+    check_legal_moves(expected_black_legal_moves, black_legal_moves)
+    check_legal_moves(expected_white_legal_moves, white_legal_moves)
+
+    black_mask = generate_mask(tensors, BLACK).numpy()
+    white_mask = generate_mask(tensors, WHITE).numpy()
+
+    check_masking(expected_white_legal_moves, white_mask)
+    check_masking(expected_black_legal_moves, black_mask)
+
+
+def check_legal_moves(expected_legal_moves, legal_moves):
+    assert sorted(legal_moves) == sorted(expected_legal_moves)
+
+
+def check_masking(expected_legal_moves, mask):
+    """ Masking should hide the illegal moves """
+    expected_ixs = sorted([a*9+b for (a,b) in expected_legal_moves])
+    nonzero_mask_ixs = sorted(list(np.nonzero(mask)[0]))
+    assert expected_ixs == nonzero_mask_ixs[:-1] #mask includes 'PASS' move
 
 
 def _check_the_no_suicide_rule():
