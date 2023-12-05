@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.rl.utils import _index_to_move, _nn_tensor_from_matrix
@@ -19,8 +20,6 @@ class GoBoard:
     def __init__(self, size=BOARD_SIZE, initial_state_matrix=None):
         self.size = size
         self.initialise_board(initial_state_matrix)
-        self.previous_board = None  # To check for Ko rule
-        #assert_board_is_self_consistent(self)
 
     def initialise_board(self, initial_state_matrix):
         if initial_state_matrix is None:
@@ -28,17 +27,16 @@ class GoBoard:
         else:
             self._matrix = initial_state_matrix
         self.tensor = _nn_tensor_from_matrix(self._matrix)
+        self.previous_boards = []  # To check for Ko rule
+        self.append_board_state_to_history()
 
     def legal_moves(self, color):
         """ Doesn't return the PASS move """
-        #assert_board_is_self_consistent(self)
         empty_positions = np.column_stack(np.where(self._matrix == 0))
         moves = [(x, y) for x, y in empty_positions if self.is_valid_move((x, y), color)]
-        #assert_board_is_self_consistent(self)
         return moves
 
     def is_valid_move(self, position, color):
-        #assert_board_is_self_consistent(self)
         if position == PASS:
             return True
 
@@ -51,6 +49,9 @@ class GoBoard:
 
         # Intersection check
         elif self._matrix[x, y] != 0:
+            valid = False
+
+        elif self.violates_ko_rule(position, color):
             valid = False
 
         else:
@@ -66,9 +67,17 @@ class GoBoard:
             self._matrix[x, y] = 0  # Reset the position to its original state
             self.tensor[0][x,y] = 0
 
-        # TODO: Check for Ko rule
-        #assert_board_is_self_consistent(self)
         return valid
+
+    def violates_ko_rule(self, position, color):
+        """ Board state cannot be immediately repeated """
+        x, y = position
+        self._matrix[x,y] = color
+        last_three_states = self.previous_boards[-3:]
+        ko_violation = any([np.array_equal(self._matrix, s) for s in
+                            last_three_states])
+        self._matrix[x,y] = 0
+        return ko_violation
 
     def neighbours_all_have_no_liberty(self, position):
         x,y = position
@@ -77,7 +86,6 @@ class GoBoard:
         return sum(neighbor_libs) == 0
 
     def count_liberties(self, position):
-        #assert_board_is_self_consistent(self)
         stack = [position]
         liberties_set = set()
         visited = set()
@@ -103,15 +111,14 @@ class GoBoard:
                     stack.append((nx, ny))
 
         n_unique_liberties = len(liberties_set)
-        #assert_board_is_self_consistent(self)
         return n_unique_liberties
 
     def apply_move(self, move, color):
-        #assert_board_is_self_consistent(self)
         move = _index_to_move(move)
         assert self.is_valid_move(move, color)
 
         if move == PASS:
+            self.append_board_state_to_history()
             return
 
         x, y = move
@@ -127,10 +134,9 @@ class GoBoard:
                 if self.count_liberties((nx, ny)) == 0:
                     captured_stones = self._remove_group((nx, ny))
         self.assert_position_is_occupied(x,y)
-        #assert_board_is_self_consistent(self)
+        self.append_board_state_to_history()
 
     def _remove_group(self, position):
-        #assert_board_is_self_consistent(self)
         stack = [position]
         color = self._matrix[position]
         captured_count = 0
@@ -150,11 +156,15 @@ class GoBoard:
                         continue
 
                     stack.append((nx, ny))
-        #assert_board_is_self_consistent(self)
         return captured_count
 
     def assert_position_is_occupied(self, x, y):
         assert self._matrix[x,y] != 0
+
+    def append_board_state_to_history(self):
+        """ Must use copy to avoid nasty memory reference surprises """
+        matrix = copy.copy(self._matrix)
+        self.previous_boards.append(matrix)
 
 
 def assert_board_is_self_consistent(board):
