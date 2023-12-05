@@ -27,8 +27,3 @@ class ValueNN(nn.Module):
         value_output = torch.tanh(self.fc_value(x))  # Scaled to [-1, 1]
         return value_output
 
-    def get_value(self, board):
-        value_output = self.forward(board)
-        return value_output.item()
-
-
