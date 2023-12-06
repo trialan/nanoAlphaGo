@@ -1,10 +1,16 @@
 import torch
+import random
+import numpy as np
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS, RL_params
 
 gamma = RL_params["gamma"]
 lambda_ = RL_params["lambda"]
 
+def set_seed(seed):
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
 
 def numerically_stable_tensor_division(a, b):
     tiny_number = 1e-10

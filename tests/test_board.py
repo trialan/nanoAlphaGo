@@ -206,7 +206,7 @@ def test_certain_boards_for_legal_moves():
 
 def assert_masking_and_move_calculation_correct(tensors,
                 expected_white_legal_moves, expected_black_legal_moves):
-    board = GoBoard(initial_state_matrix=tensors[0].numpy())
+    board = GoBoard(initial_state_matrix=np.array(tensors[0], dtype=int))
     black_legal_moves = board.legal_moves(BLACK)
     white_legal_moves = board.legal_moves(WHITE)
 
@@ -276,7 +276,6 @@ def assert_first_move_options_are_correct(board):
 
 
 def _setup_a_simple_board():
-    board = GoBoard(size=9)
     board_matrix = np.array([[1,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
@@ -286,17 +285,12 @@ def _setup_a_simple_board():
                             [0,0,0,0,0,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
-    for x in range(board.size):
-        for y in range(board.size):
-            color = board_matrix[x, y]
-            if color != 0:
-                index = x * board.size + y
-                board.apply_move(index, color)
+    board = GoBoard(size=9, initial_state_matrix=board_matrix)
+    assert board._matrix.dtype.kind in 'iu'
     return board
 
 
 def _setup_a_board_where_suicide_would_be_possible():
-    board = GoBoard(size=9)
     board_matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
@@ -306,17 +300,12 @@ def _setup_a_board_where_suicide_would_be_possible():
                             [0,0,0,0,0,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
-    for x in range(board.size):
-        for y in range(board.size):
-            color = board_matrix[x, y]
-            if color != 0:
-                index = x * board.size + y
-                board.apply_move(index, color)
+    board = GoBoard(size=9, initial_state_matrix=board_matrix)
+    assert board._matrix.dtype.kind in 'iu'
     return board
 
 
 def _setup_a_complicated_board():
-    board = GoBoard(size=9)
     board_matrix = np.array([[1,1,-1,0,0,0,0,0,0],
                             [1,0,-1,0,0,0,0,0,0],
                             [-1,-1,0,0,0,0,0,0,0],
@@ -326,12 +315,8 @@ def _setup_a_complicated_board():
                             [0,-1,1,1,1,0,0,0,0],
                             [0,1,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]])
-    for x in range(board.size):
-        for y in range(board.size):
-            color = board_matrix[x, y]
-            if color != 0:
-                index = x * board.size + y
-                board.apply_move(index, color)
+    board = GoBoard(size=9, initial_state_matrix=board_matrix)
+    assert board._matrix.dtype.kind in 'iu'
     return board
 
 
@@ -345,7 +330,7 @@ def assert_neighbours_have_just_one_liberty(board, position):
 def _setup_one_eyed_group_board():
     """ White has a fully surrounded group with a single eye, this can be
     captured by black in a single move """
-    matrix = np.zeros((9,9))
+    matrix = np.zeros((9,9), dtype=int)
     for col in [1,2,3,4,5]:
         matrix[1,col] = BLACK
     for row in [2,3,4]:
@@ -361,11 +346,12 @@ def _setup_one_eyed_group_board():
     for col in [2,3,4]:
         matrix[4,col] = WHITE
     board = GoBoard(initial_state_matrix=matrix)
+    assert board._matrix.dtype.kind in 'iu'
     return board
 
 
 def _setup_two_eyed_group_board():
-    matrix = np.zeros((9,9))
+    matrix = np.zeros((9,9), dtype=int)
     for row in [1,3]:
         matrix[row,0] = BLACK
     for row in [0,1,2,3]:
@@ -375,6 +361,7 @@ def _setup_two_eyed_group_board():
     for col in [0,1]:
         matrix[4,col] = WHITE
     board = GoBoard(initial_state_matrix=matrix)
+    assert board._matrix.dtype.kind in 'iu'
     return board
 
 

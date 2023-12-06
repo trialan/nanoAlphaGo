@@ -97,4 +97,3 @@ def position_is_within_board(pos):
     return pos_is_on_the_board
 
 
-

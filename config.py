@@ -19,5 +19,5 @@ RL_params = {
             "gamma": 0.99,
             "lambda": 0.95,
             }
-
-
+RL_params['n_ppo_loops'] = int(RL_params["total_games"]/RL_params["n_trajectories_per_step"])
+SEED = 42

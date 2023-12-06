@@ -24,20 +24,24 @@ from nanoAlphaGo.game.board import GoBoard, assert_board_is_self_consistent
 from nanoAlphaGo.game.scoring import calculate_outcome_for_player
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
+from nanoAlphaGo.rl.utils import set_seed
 
 
 def collect_trajectories(policyNN, n_trajectories):
     state_dict = policyNN.state_dict()
+    seeds = [np.random.randint(1e6) for _ in range(n_trajectories)]
     with multiprocessing.Pool(7) as pool:
-        args = [(state_dict, _) for _ in range(n_trajectories)]
+        args = [(state_dict, seed) for seed in seeds]
         trajectories = list(pool.starmap(play_game_wrapper, args))
     wandb.log({"Mean score": get_mean_score(trajectories)})
     return trajectories
 
 
 def st_collect_trajectories(policyNN, n_trajectories):
-    trajectories = [play_game(policyNN) for _ in tqdm(range(n_trajectories))]
-    wandb.log({"Mean score": get_mean_score(trajectories)})
+    """ Single threaded version, helpful for debugging """
+    seeds = [np.random.randint(1e6) for _ in range(n_trajectories)]
+    trajectories = [play_game(policyNN, seed) for seed in tqdm(seeds)]
+    #wandb.log({"Mean score": get_mean_score(trajectories)})
     return trajectories
 
 
@@ -46,10 +50,10 @@ def get_mean_score(trajectories):
     return np.mean(scores)
 
 
-def play_game(policy):
+def play_game(policy, seed):
     board = GoBoard()
     adversary = PolicyNN(BLACK)
-    game_data = initialise_game_data()
+    game_data = initialise_game_data(seed)
 
     while not game_is_over(board, game_data):
         play_turn(board, policy, adversary, game_data)
@@ -60,15 +64,16 @@ def play_game(policy):
     return trajectory
 
 
-def play_game_wrapper(state_dict, _):
+def play_game_wrapper(state_dict, seed):
     policyNN = PolicyNN(WHITE)
     policyNN.load_state_dict(state_dict)
     policyNN.eval()
-    return play_game(policyNN)
+    return play_game(policyNN, seed)
 
 
-def initialise_game_data():
+def initialise_game_data(seed):
     game_data = {
+        'seed': seed,
         'moves': [],
         'rewards': [],
         'board_states': [],
@@ -77,6 +82,7 @@ def initialise_game_data():
         'player': BLACK,
         'turn': 0,
     }
+    set_seed(game_data['seed'])
     return game_data
 
 

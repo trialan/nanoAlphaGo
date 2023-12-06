@@ -33,7 +33,7 @@ def ppo_train(policy_net, value_net, n_loops):
 def update_policy(policy_net, optimizer, trajectories, advantages):
     optimizer.zero_grad()
     loss = compute_policy_loss(policy_net, trajectories, advantages)
-    wandb.log({"policy loss": loss.item()})
+    wandb.log({"policy objective": loss.item()})
     perform_backprop(policy_net, optimizer, loss)
 
 

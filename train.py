@@ -14,8 +14,7 @@ if __name__ == '__main__':
 
     policy_network = PolicyNN(WHITE)
     value_network = ValueNN()
-    n_loops = RL_params["total_games"]/RL_params["n_trajectories_per_step"]
-    ppo_train(policy_network, value_network, n_loops)
+    ppo_train(policy_network, value_network, n_loops=RL_params["n_ppo_loops"])
 
     wandb.finish()
 

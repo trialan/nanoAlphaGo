@@ -4,6 +4,7 @@ import copy
 from nanoAlphaGo.config import BOARD_SIZE, PASS
 from nanoAlphaGo.rl.utils import _index_to_move, _nn_tensor_from_matrix
 from nanoAlphaGo.game.scoring import NEIGHBORS, position_is_within_board
+from nanoAlphaGo.game.fast_libs import fast_count_liberties
 from nanoAlphaGo.graphics.rendering import display_board
 
 """
@@ -37,6 +38,7 @@ class GoBoard:
         return moves
 
     def is_valid_move(self, position, color):
+        assert self._matrix.dtype.kind in 'iu'
         if position == PASS:
             return True
 
@@ -70,6 +72,7 @@ class GoBoard:
         return valid
 
     def violates_ko_rule(self, position, color):
+        assert self._matrix.dtype.kind in 'iu'
         """ Board state cannot be immediately repeated """
         x, y = position
         self._matrix[x,y] = color
@@ -80,12 +83,17 @@ class GoBoard:
         return ko_violation
 
     def neighbours_all_have_no_liberty(self, position):
+        assert self._matrix.dtype.kind in 'iu'
         x,y = position
         neighbors = [n for n in NEIGHBORS[position] if position_is_within_board(n)]
         neighbor_libs = [self.count_liberties(n) for n in neighbors]
         return sum(neighbor_libs) == 0
 
     def count_liberties(self, position):
+        return fast_count_liberties(position, self._matrix)
+
+    def _count_liberties(self, position):
+        assert self._matrix.dtype.kind in 'iu'
         stack = [position]
         liberties_set = set()
         visited = set()
@@ -114,6 +122,7 @@ class GoBoard:
         return n_unique_liberties
 
     def apply_move(self, move, color):
+        assert self._matrix.dtype.kind in 'iu'
         move = _index_to_move(move)
         assert self.is_valid_move(move, color)
 
@@ -171,5 +180,6 @@ def assert_board_is_self_consistent(board):
     matrix = board._matrix
     tensor = board.tensor
     assert np.array_equal(matrix, tensor[0].cpu())
+
 
 

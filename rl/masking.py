@@ -12,7 +12,7 @@ def legal_move_mask(board_tensors, player_color):
 
 
 def generate_mask(board_tensor, player_color):
-    matrix = board_tensor[0].cpu().numpy()
+    matrix = np.array(board_tensor[0].cpu(), dtype=int)
     board = GoBoard(initial_state_matrix=matrix)
     assert board._matrix.shape == (BOARD_SIZE, BOARD_SIZE)
     mask = torch.zeros(BOARD_SIZE * BOARD_SIZE + 1, dtype=torch.float32)

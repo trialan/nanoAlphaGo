@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 
-from nanoAlphaGo.config import BOARD_SIZE
+from nanoAlphaGo.config import BOARD_SIZE, SEED
+from nanoAlphaGo.rl.utils import set_seed
 
 
 class ValueNN(nn.Module):
     def __init__(self):
+        set_seed(SEED)
         super(ValueNN, self).__init__()
         board_size = BOARD_SIZE
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)

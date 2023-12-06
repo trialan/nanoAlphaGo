@@ -2,15 +2,16 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from nanoAlphaGo.config import BOARD_SIZE, PASS
+from nanoAlphaGo.config import BOARD_SIZE, PASS, SEED
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.masking import legal_move_mask
 from nanoAlphaGo.rl.debugging import assert_no_nan_outputs
-from nanoAlphaGo.rl.utils import _index_to_move
+from nanoAlphaGo.rl.utils import _index_to_move, set_seed
 
 
 class PolicyNN(nn.Module):
     def __init__(self, color):
+        set_seed(SEED)
         super(PolicyNN, self).__init__()
         self.color = color
         assert color in [1, -1]
@@ -64,14 +65,15 @@ class PolicyNN(nn.Module):
         self.assert_is_valid_move(outputs, board_tensors)
 
     def get_move_as_int_from_prob_dist(self, prob_dist, board_tensor):
-        predicted = torch.argmax(prob_dist)
+        #predicted = torch.argmax(prob_dist)
+        predicted = torch.multinomial(prob_dist, 1)
         move_as_int = predicted.item()
         return move_as_int
 
     def assert_is_valid_move(self, policy_outputs, board_tensors):
         for m, b in zip(policy_outputs, board_tensors):
             move_as_int = self.get_move_as_int_from_prob_dist(m,b)
-            board = GoBoard(initial_state_matrix=b[0].cpu().numpy())
+            board = GoBoard(initial_state_matrix=np.array(b[0],dtype=int))
             position = _index_to_move(move_as_int)
             assert board.is_valid_move(position, self.color)
 
