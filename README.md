@@ -14,8 +14,6 @@ def ppo_train(policy_net, value_net, n_loops):
         update_value_function(value_net, value_opt, trajectories)
 ```
 
-![Alt text](go_diagram.png)
-
 # References
 [1] Schulman et al. "Proximal Policy Optimization Algorithms", arxiv:1707.06347, 2017.
 
