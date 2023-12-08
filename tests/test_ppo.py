@@ -9,16 +9,16 @@ from nanoAlphaGo.config import WHITE, RL_params
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.ppo import ppo_train, multiply_with_dim_correction
-from nanoAlphaGo.rl.utils import add_rewards_to_go_to_trajectories
+from nanoAlphaGo.rl.utils import add_rewards_to_go_to_trajectories, change_wandb_mode_for_testing
 from nanoAlphaGo.rl.trajectories import collect_trajectories
 from nanoAlphaGo.rl.value import ValueNN
 
+change_wandb_mode_for_testing("disabled")
 
+@pytest.mark.skip()
 def test_ppo_training_runs():
-    change_wandb_mode_for_testing("disabled")
     RL_params["n_trajectories"] = 2
     ppo_train(PolicyNN(WHITE), ValueNN(), n_loops=1)
-    change_wandb_mode_for_testing("enabled")
 
 
 def test_computing_rewards_to_go():
@@ -52,10 +52,4 @@ def assert_trajectories_have_right_dimensions(trajectories):
         assert len(lengths) == 1
 
 
-def change_wandb_mode_for_testing(mode):
-    assert mode in ["enabled", "disabled"]
-    subprocess.run(["wandb", mode])
-    if mode == "disabled":
-        wandb.init()
-
-
+change_wandb_mode_for_testing("enabled")

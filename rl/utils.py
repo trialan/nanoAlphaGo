@@ -1,16 +1,20 @@
 import torch
 import random
 import numpy as np
+import wandb
+import subprocess
 
 from nanoAlphaGo.config import BOARD_SIZE, PASS, RL_params
 
 gamma = RL_params["gamma"]
 lambda_ = RL_params["lambda"]
 
+
 def set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
+
 
 def numerically_stable_tensor_division(a, b):
     tiny_number = 1e-10
@@ -45,27 +49,58 @@ def compute_advantages(trajectories, valueNN):
 
     advantages_list = []
     for trajectory in trajectories:
-        rewards_to_go = trajectory['rewards_to_go']
+        rewards = trajectory['rewards']
         states = trajectory['board_states']
-
-        values = valueNN(states)
-
-        advantages = []
-        gae = 0
-
-        for t in reversed(range(len(rewards_to_go))):
-            delta = rewards_to_go[t] - values[t]
-            if t < len(rewards_to_go) - 1:
-                delta += gamma * values[t+1]
-            gae = delta + gamma * lambda_ * gae
-            advantages.insert(0, gae)
-
-        advantages_list.append(torch.tensor(advantages))
+        values = valueNN(states).squeeze(1)
+        advantages = tr_calculate_advantages(rewards, values)
+        #adv_2 = calculate_advantages(rewards, values)
+        advantages_list.append(advantages)
 
     num_states = sum(len(t['board_states']) for t in trajectories)
     advantages = torch.cat(advantages_list).to(device)
+    wandb.log({"advantages": advantages})
 
     check_advantages(advantages, correct_len=num_states)
+    return advantages
+
+
+def special_adv(rewards, values):
+    adv = np.append((values[1:] - values[:-1]).detach().numpy(),0)
+    return torch.tensor(adv)
+
+
+def tr_calculate_advantages(rewards, values):
+    n_steps = len(rewards)
+    deltas = [0]
+    for t in range(n_steps - 1):
+        delta_t = rewards[t] + gamma * values[t+1] - values[t]
+        deltas.append(delta_t.item())
+    advantages = []
+    T = n_steps
+    for t in range(T):
+        delta_ixs = list(range(t, T))
+        a_t_delta = np.array([deltas[ix] for ix in delta_ixs])
+        gl_exp = [x for x in range(T-t)]
+        a_t_gl = np.repeat(gamma*lambda_, T-t) #last valid ix is T-t-1
+        scale_term = a_t_gl ** gl_exp
+        a_t_terms = a_t_delta * scale_term
+        advantages.append(sum(a_t_terms))
+    advantages = torch.tensor(advantages)
+    advantages = (advantages - advantages.mean()) / advantages.std()
+    return advantages
+
+
+def calculate_advantages(rewards, values):
+    advantages = []
+    advantage = 0
+    next_value = 0
+    for r, v in zip(reversed(rewards), reversed(values)):
+        td_error = r + next_value * gamma - v
+        advantage = td_error + advantage * gamma * lambda_
+        next_value = v
+        advantages.insert(0, advantage)
+    advantages = torch.tensor(advantages)
+    advantages = (advantages - advantages.mean()) / advantages.std()
     return advantages
 
 
@@ -85,9 +120,16 @@ def _compute_rtg_single_trajectory(trajectory):
     device = get_device_of_trajectory(trajectory)
     outcome = trajectory['rewards'][-1]
     n_zeros = len(trajectory['board_states']) - 1
-    rewards_to_go = [0 for _ in range(n_zeros)] + [outcome]
+    rewards_to_go = [outcome for _ in range(n_zeros)] + [outcome]
     trajectory['rewards_to_go'] = torch.tensor(rewards_to_go,
                                                dtype=torch.float32).to(device)
     return trajectory
+
+
+def change_wandb_mode_for_testing(mode):
+    assert mode in ["enabled", "disabled"]
+    subprocess.run(["wandb", mode])
+    if mode == "disabled":
+        wandb.init()
 
 

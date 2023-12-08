@@ -49,7 +49,10 @@ def test_that_sanity_checks_are_sane():
         thanks to our masking. """
     board = _setup_a_complicated_board()
     batch = board.tensor.unsqueeze(0)
-    policy = PolicyNN(color=1)
+    policy = PolicyNN(color=1, sampler="argmax")
+    #n.b. this wouldn't pass with multinomial sampling by construction
+    #because we make the most likely move a bad move, and wait to see
+    #that this move isn't allowed.
     move_probs = policy.forward(batch)
     move_probs[0][0] = 0.5
 

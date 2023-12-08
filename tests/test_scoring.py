@@ -3,11 +3,48 @@ import numpy as  np
 from nanoAlphaGo.game.board import GoBoard
 from nanoAlphaGo.config import WHITE, BLACK
 from nanoAlphaGo.game.scoring import calculate_score, find_reached
+from nanoAlphaGo.graphics.rendering import display_board
 
 
-def test_its_draw_if_too_many_turns_played():
-    """ Bad players could play an infinite game, so we limit the
-        number of moves to 100 """
+def test_calculating_tricky_scores():
+    matrix = np.array([[ 1.,  1.,  1.,  1., -1., -1., -1.,  1.,  1.],
+                   [ 1.,  1.,  1., -1., -1., -1., -1.,  1.,  1.],
+                   [ 1.,  1., -1., -1.,  1., -1., -1.,  0.,  1.],
+                   [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1., -1.],
+                   [ 1.,  1.,  1.,  0.,  1.,  1.,  1.,  1.,  0.],
+                   [ 1.,  1., -1.,  1.,  1.,  1., -1.,  1.,  1.],
+                   [-1.,  1., -1., -1.,  1.,  1., -1., -1.,  0.],
+                   [-1., -1.,  0.,  1., -1.,  1.,  1., -1.,  1.],
+                   [ 1.,  1.,  1.,  1.,  0., -1.,  1., -1.,  1.]])
+    n_white_stones = np.sum(matrix == WHITE)
+    n_black_stones = np.sum(matrix == BLACK)
+    white_territory = 0
+    black_territory = 1
+    expected_white_score = n_white_stones + white_territory
+    expected_black_score = n_black_stones + black_territory
+    score = calculate_score(matrix, komi=0)
+    assert score[BLACK] == expected_black_score
+    assert score[WHITE] == expected_white_score
+
+    matrix = np.array([[ 1.,  1.,  1., -1., -1., -1., -1., -1., -1.],
+               [ 1.,  1.,  1., -1., -1., -1., -1.,  0., -1.],
+               [ 1.,  1.,  1., -1.,  0., -1., -1., -1., -1.],
+               [ 1., -1.,  1.,  1., -1., -1., -1., -1., -1.],
+               [-1., -1., -1., -1., -1., -1.,  0., -1., -1.],
+               [-1.,  0., -1.,  1., -1.,  0.,  1.,  0.,  1.],
+               [ 1.,  1.,  1.,  1., -1.,  1., -1., -1., -1.],
+               [ 0.,  1., -1.,  0.,  1., -1.,  0., -1.,  0.],
+               [-1.,  0.,  1., -1.,  0., -1., -1., -1.,  1.]])
+    n_white_stones = 45
+    n_black_stones = 24
+    white_territory = 3
+    black_territory = 0
+
+    expected_white_score = n_white_stones + white_territory
+    expected_black_score = n_black_stones + black_territory
+    score = calculate_score(matrix, komi=0)
+    assert score[BLACK] == expected_black_score
+    assert score[WHITE] == expected_white_score
 
 
 def test_calculating_score_case_one():

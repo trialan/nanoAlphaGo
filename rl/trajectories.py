@@ -21,13 +21,13 @@ import wandb
 
 from nanoAlphaGo.config import BLACK, WHITE, PASS, BOARD_SIZE
 from nanoAlphaGo.game.board import GoBoard, assert_board_is_self_consistent
-from nanoAlphaGo.game.scoring import calculate_outcome_for_player
+from nanoAlphaGo.game.scoring import calculate_outcome_for_player, calculate_score
 from nanoAlphaGo.graphics.rendering import display_board
 from nanoAlphaGo.rl.policy import PolicyNN
 from nanoAlphaGo.rl.utils import set_seed
 
 
-def collect_trajectories(policyNN, n_trajectories):
+def __collect_trajectories(policyNN, n_trajectories):
     state_dict = policyNN.state_dict()
     seeds = [np.random.randint(1e6) for _ in range(n_trajectories)]
     with multiprocessing.Pool(7) as pool:
@@ -37,11 +37,11 @@ def collect_trajectories(policyNN, n_trajectories):
     return trajectories
 
 
-def st_collect_trajectories(policyNN, n_trajectories):
+def collect_trajectories(policyNN, n_trajectories):
     """ Single threaded version, helpful for debugging """
     seeds = [np.random.randint(1e6) for _ in range(n_trajectories)]
     trajectories = [play_game(policyNN, seed) for seed in tqdm(seeds)]
-    #wandb.log({"Mean score": get_mean_score(trajectories)})
+    wandb.log({"Mean score": get_mean_score(trajectories)})
     return trajectories
 
 
@@ -51,6 +51,7 @@ def get_mean_score(trajectories):
 
 
 def play_game(policy, seed):
+    set_seed(seed)
     board = GoBoard()
     adversary = PolicyNN(BLACK)
     game_data = initialise_game_data(seed)
@@ -62,6 +63,17 @@ def play_game(policy, seed):
     game_outcome = calculate_outcome_for_player(board, policy.color)
     trajectory = build_trajectory(game_data, game_outcome, policy.device)
     return trajectory
+
+
+def play_turn(board, policy, adversary, game_data):
+    player = game_data["player"]
+    network = get_player_network(policy, adversary, player)
+    move, board_state, probs = compute_move(network, board)
+    update_consecutive_passes(move, game_data)
+    captured_stones = board.apply_move(move, player)
+    game_data = update_game_data(game_data, move, board_state, probs,
+                                 captured_stones)
+    return move, board_state, probs
 
 
 def play_game_wrapper(state_dict, seed):
@@ -81,6 +93,7 @@ def initialise_game_data(seed):
         'consecutive_passes': 0,
         'player': BLACK,
         'turn': 0,
+        'prisoners': {BLACK: 0, WHITE: 0},
     }
     set_seed(game_data['seed'])
     return game_data
@@ -95,22 +108,9 @@ def game_is_over(board, game_data):
 
 
 def too_many_turns(game_data):
-    """ 101 was chosen as turn limit because 9x9 = 81. I round up for PASS
-        move, but realistically the agent should rarely pass, and it would
-        seem odd for there to be over 20 passes in a game. """
-    threshold = BOARD_SIZE * BOARD_SIZE + 20
-    too_many_turns = game_data["turn"] - game_data["moves"].count(PASS) > threshold
+    threshold = BOARD_SIZE * BOARD_SIZE * 2 #same as AlphaGo paper
+    too_many_turns = game_data["turn"] > threshold
     return too_many_turns
-
-
-def play_turn(board, policy, adversary, game_data):
-    player = game_data["player"]
-    network = get_player_network(policy, adversary, player)
-    move, board_state, probs = compute_move(network, board)
-    update_consecutive_passes(move, game_data)
-    board.apply_move(move, player)
-    game_data = update_game_data(game_data, move, board_state, probs)
-    return move, board_state, probs
 
 
 def switch_player(game_data):
@@ -126,12 +126,14 @@ def build_trajectory(game_data, game_outcome, device):
     return trajectory
 
 
-def update_game_data(game_data, move, board_state, probs):
+def update_game_data(game_data, move, board_state, probs, captured_stones):
     game_data["moves"].append(move)
     game_data["rewards"].append(0)
     game_data["board_states"].append(board_state)
     game_data["policy_probs"].append(probs)
     game_data["turn"] += 1
+    color = game_data['player']
+    game_data['prisoners'][color] += captured_stones
     return game_data
 
 

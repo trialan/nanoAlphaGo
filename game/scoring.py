@@ -10,9 +10,9 @@ NEIGHBORS = {(x, y): [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
 def calculate_outcome_for_player(board, color):
     score = calculate_score(board._matrix)
     player_won = score[color] > score[-color]
+    draw = score[color] == score[-color]
     if player_won:
         return 1
-    draw = score[color] == score[-color]
     if draw:
         return 0
     else:
@@ -23,7 +23,8 @@ def calculate_score(board_matrix, komi=KOMI):
     working_board = board_matrix.copy()
     working_board = assign_positions_to_players(working_board)
     black_score, white_score = count_player_positions(working_board)
-    return {BLACK: black_score, WHITE: white_score + komi}
+    return {BLACK: black_score,
+            WHITE: white_score + komi}
 
 
 def assign_positions_to_players(working_board):
