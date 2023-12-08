@@ -22,12 +22,11 @@ epsilon = RL_params["epsilon"]
 
 def ppo_train(policy_net, value_net, n_loops):
     policy_opt, value_opt = setup_optimizers(policy_net, value_net)
-    for loop in tqdm(range(n_loops), desc="PPO Steps"):
+    for _ in tqdm(range(n_loops), desc="PPO Steps"):
         trajectories = collect_trajectories(policy_net, n_trajectories)
         add_rewards_to_go_to_trajectories(trajectories)
         advantages = compute_advantages(trajectories, value_net)
-        if loop > n_loops/2:
-            update_policy(policy_net, policy_opt, trajectories, advantages)
+        update_policy(policy_net, policy_opt, trajectories, advantages)
         update_value_function(value_net, value_opt, trajectories)
 
 
